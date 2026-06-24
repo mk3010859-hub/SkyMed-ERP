@@ -261,7 +261,7 @@
         // 🔥 SUPABASE CONFIG - CHANGE HERE
         // ============================================================
         const SUPABASE_URL = 'https://nxfvrolgauzxhkadlnux.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_SwppONsYbyd6CMmyOHxEIQ__GnTdP3R'; // 🔥 CHANGE THIS
+        const SUPABASE_KEY = 'sb_publishable_SwppONsYbyd6CMmyOHxEIQ__GnTdP3R'; // 
         
         // Initialize Supabase client
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -701,7 +701,65 @@
                 location.reload(); 
             } 
         }
+// ============================================================
+// 🔥 MISSING LOGIN FUNCTIONS - PASTE THIS
+// ============================================================
 
+function showAdminLogin() {
+    document.getElementById('adminPasswordModal').style.display = 'flex';
+    document.getElementById('adminPasswordInput').value = '';
+    document.getElementById('loginError').innerHTML = '';
+}
+
+function showStaffLogin() {
+    document.getElementById('staffPasswordModal').style.display = 'flex';
+    document.getElementById('staffNameInput').value = '';
+    document.getElementById('staffPasswordInput').value = '';
+    document.getElementById('loginError').innerHTML = '';
+}
+
+function closeAdminModal() {
+    document.getElementById('adminPasswordModal').style.display = 'none';
+}
+
+function closeStaffModal() {
+    document.getElementById('staffPasswordModal').style.display = 'none';
+}
+
+function verifyAdminPassword() {
+    const pwd = document.getElementById('adminPasswordInput').value;
+    if (pwd === 'admin123') {
+        currentUser = { name: 'Administrator', role: 'admin' };
+        closeAdminModal();
+        startApp();
+    } else {
+        document.getElementById('loginError').innerHTML = '❌ Wrong password!';
+    }
+}
+
+function verifyStaffPassword() {
+    const name = document.getElementById('staffNameInput').value.trim();
+    const pwd = document.getElementById('staffPasswordInput').value;
+    if (!name) {
+        document.getElementById('loginError').innerHTML = '❌ Name is required!';
+        return;
+    }
+    if (pwd === 'staff123') {
+        currentUser = { name: name, role: 'staff' };
+        closeStaffModal();
+        startApp();
+    } else {
+        document.getElementById('loginError').innerHTML = '❌ Wrong password!';
+    }
+}
+
+function loginAsGuest() {
+    const name = prompt('👤 Enter your name:', 'Guest');
+    if (name !== null) {
+        currentUser = { name: name || 'Guest', role: 'guest' };
+        startApp();
+    }
+}
         function startApp() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';

@@ -1,7 +1,7 @@
 # ✈️ SpiceJet SkyMed Inventory System
 
 ## 🚀 Live Demo
-https://mk3010859-hub.github.io/SkyMed-Pro/
+https://mk3010859-hub.github.io/SkyMed-Inventory/
 
 ## 📋 Features
 - ✅ Complete Medical Inventory Management

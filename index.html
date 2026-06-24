@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpiceJet SkyMed - Medical Inventory</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- ===== SUPABASE CLIENT ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* All your existing CSS here - copy from your original file */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; min-height: 100vh; }
+        /* ... (copy all your CSS from original file) ... */
+    </style>
+</head>
+<body>
+    <!-- ===== ALL YOUR HTML HERE - SAME AS ORIGINAL ===== -->
+    <!-- ... (copy all your HTML from original file) ... -->
+
+    <script>
+        // ============================================================
+        // 🔥 SUPABASE CONFIG
+        // ============================================================
+        const SUPABASE_URL = 'https://ccwqofruxtvzeqxqmjey.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_hOp3KfAh8v3c15l5dr3h8w_2h4dYMbm';
+        
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // ============================================================
+        // MAIN DATABASE OBJECT - WITH SUPABASE SYNC
+        // ============================================================
+        let db = { 
+            medicines: [], 
+            inbound: [], 
+            outbound: [], 
+            deletedItems: [], 
+            config: {} 
+        };
+        
+        let currentUser = { name: '', role: 'guest' };
+        let currentFilter = "all", expiryDays = 30, currentSearch = "", categoryFilter = "all", sortBy = "name";
+        let reportStartDate = null, reportEndDate = null;
+        let currentFolderHandle = null, autoSaveTimer = null;
+        let refreshInterval = null;
+        let isSyncing = false;
+
+        // ============================================================
+        // 🔥 SUPABASE SYNC FUNCTIONS
+        // ============================================================
+        
+        // Load data from Supabase
+        async function loadFromSupabase() {
+            try {
+                console.log('☁️ Loading data from Supabase...');
+                isSyncing = true;
+                
+                // Load all tables in parallel
+                const [medicinesRes, inboundRes, outboundRes, deletedRes, configRes] = await Promise.all([
+                    supabase.from('medicines').select('*'),
+                    supabase.from('inbound').select('*'),
+                    supabase.from('outbound').select('*'),
+                    supabase.from('deleted_items').select('*'),
+                    supabase.from('config').select('*')
+                ]);
+                
+                if (medicinesRes.error) throw medicinesRes.error;
+                if (inboundRes.error) throw inboundRes.error;
+                if (outboundRes.error) throw outboundRes.error;
+                if (deletedRes.error) throw deletedRes.error;
+                
+                db.medicines = medicinesRes.data || [];
+                db.inbound = inboundRes.data || [];
+                db.outbound = outboundRes.data || [];
+                db.deletedItems = deletedRes.data || [];
+                
+                if (configRes.data && configRes.data.length > 0) {
+                    db.config = configRes.data[0].value || {};
+                }
+                
+                console.log(`✅ Loaded: ${db.medicines.length} medicines, ${db.inbound.length} inbound, ${db.outbound.length} outbound`);
+                isSyncing = false;
+                return true;
+            } catch(e) {
+                console.error('❌ Supabase load failed:', e);
+                isSyncing = false;
+                return false;
+            }
+        }
+
+        // Save data to Supabase
+        async function saveToSupabase() {
+            if (isSyncing) {
+                console.log('⏳ Sync already in progress');
+                return false;
+            }
+            
+            try {
+                console.log('☁️ Saving data to Supabase...');
+                isSyncing = true;
+                
+                // Save medicines
+                const { error: medErr } = await supabase
+                    .from('medicines')
+                    .upsert(db.medicines, { onConflict: 'id' });
+                if (medErr) throw medErr;
+                
+                // Save inbound
+                const { error: inErr } = await supabase
+                    .from('inbound')
+                    .upsert(db.inbound, { onConflict: 'id' });
+                if (inErr) throw inErr;
+                
+                // Save outbound
+                const { error: outErr } = await supabase
+                    .from('outbound')
+                    .upsert(db.outbound, { onConflict: 'id' });
+                if (outErr) throw outErr;
+                
+                // Save deleted items
+                const { error: delErr } = await supabase
+                    .from('deleted_items')
+                    .upsert(db.deletedItems, { onConflict: 'id' });
+                if (delErr) throw delErr;
+                
+                // Save config
+                const { error: cfgErr } = await supabase
+                    .from('config')
+                    .upsert({ key: 'main', value: db.config }, { onConflict: 'key' });
+                if (cfgErr) throw cfgErr;
+                
+                console.log('✅ Data saved to Supabase');
+                isSyncing = false;
+                return true;
+            } catch(e) {
+                console.error('❌ Supabase save failed:', e);
+                isSyncing = false;
+                return false;
+            }
+        }
+
+        // Full sync (load then save)
+        async function fullSync() {
+            await loadFromSupabase();
+            updateAll();
+            updateDatalists();
+            showToast('✅ Data synced with Supabase cloud!', 'success');
+        }
+
+        // ============================================================
+        // ID GENERATION
+        // ============================================================
+        function generateUniqueId() {
+            if (window.crypto && window.crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 9) + performance.now().toString(36).replace('.', '');
+        }
+
+        // ============================================================
+        // TOAST NOTIFICATIONS
+        // ============================================================
+        function showToast(message, type = 'info') {
+            const existing = document.querySelector('.toast');
+            if(existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if(toast.parentNode) toast.remove();
+            }, 3000);
+        }
+
+        // ============================================================
+        // LOCAL STORAGE (FALLBACK)
+        // ============================================================
+        function saveToLocal() { 
+            localStorage.setItem('spicejetDB', JSON.stringify(db)); 
+        }
+        
+        function loadFromLocal() { 
+            let saved = localStorage.getItem('spicejetDB'); 
+            if(saved) { 
+                try {
+                    const parsed = JSON.parse(saved);
+                    db = parsed;
+                    if(!db.deletedItems) db.deletedItems = []; 
+                    if(!db.config) db.config = {};
+                    if(!db.inbound) db.inbound = [];
+                    if(!db.outbound) db.outbound = [];
+                    if(!db.medicines) db.medicines = [];
+                } catch(e) {
+                    console.error('Error loading data:', e);
+                }
+            } 
+            updateAll(); 
+        }
+
+        // ============================================================
+        // FORCE REFRESH
+        // ============================================================
+        function forceRefresh() {
+            const time = new Date().toLocaleTimeString();
+            document.getElementById('lastRefreshTime').textContent = '⏱️ Last refresh: ' + time;
+            
+            // Load from Supabase
+            loadFromSupabase().then(() => {
+                updateAll();
+                updateDatalists();
+                showToast('✅ Data refreshed from Supabase!', 'success');
+            }).catch(() => {
+                // Fallback to local
+                loadFromLocal();
+                showToast('✅ Refreshed from local storage', 'info');
+            });
+            
+            // Update the refresh button animation
+            const btn = document.querySelector('.refresh-btn');
+            btn.style.transform = 'rotate(360deg)';
+            btn.style.transition = 'transform 0.5s';
+            setTimeout(() => {
+                btn.style.transform = 'rotate(0deg)';
+            }, 500);
+        }
+
+        // ============================================================
+        // AUTO REFRESH ON TAB VISIBILITY
+        // ============================================================
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const time = new Date().toLocaleTimeString();
+                document.getElementById('lastRefreshTime').textContent = '⏱️ Auto-refresh: ' + time;
+                loadFromSupabase().then(() => {
+                    updateAll();
+                    updateDatalists();
+                });
+            }
+        });
+
+        // ============================================================
+        // PERIODIC AUTO SYNC (Every 30 seconds)
+        // ============================================================
+        function startAutoSync() {
+            if(refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => {
+                if (!document.hidden) {
+                    saveToSupabase();
+                    loadFromSupabase().then(() => {
+                        updateAll();
+                        updateDatalists();
+                    });
+                }
+            }, 30000);
+        }
+
+        // ============================================================
+        // ALL YOUR EXISTING FUNCTIONS HERE (copy from original)
+        // ============================================================
+        // ... (copy all your existing functions: formatDate, getDateTime, 
+        //     applyPermissions, selectFolder, saveToFolder, autoSaveToFolder,
+        //     startAutoSave, verifyAdminPassword, verifyStaffPassword,
+        //     showAdminLogin, showStaffLogin, closeAdminModal, closeStaffModal,
+        //     loginAsGuest, logout, startApp, updateDatalists, setFilter,
+        //     applyDashboardFilters, resetDashboardFilters, applyFiltersAndSort,
+        //     displayMedicines, editItem, saveEditItem, closeEditModal,
+        //     deleteItem, restoreItem, clearAllDeleted, loadDeletedTable,
+        //     filterOutboundHistory, resetOutboundFilters, setPeriod,
+        //     applyCustomDateRange, generateReport, exportAllToExcel,
+        //     exportStockToExcel, exportLowStockToExcel, exportExpiringToExcel,
+        //     exportExpiredToExcel, exportInboundToExcel, exportOutboundToExcel,
+        //     exportDeletedToExcel, exportPeriodReport, exportInboundDetail,
+        //     exportOutboundDetail, exportFullBackup, resetAllData,
+        //     downloadInboundTemplate, importInboundExcel, exportCurrentStock,
+        //     downloadOutboundTemplate, importOutboundExcel, exportSalesReport,
+        //     updateAll) 
+        // ============================================================
+
+        // ============================================================
+        // 🔥 MODIFIED UPDATEALL - WITH SUPABASE SYNC
+        // ============================================================
+        function updateAll() {
+            // Update stats
+            document.getElementById('totalMedicines').innerHTML = db.medicines.length;
+            document.getElementById('lowStock').innerHTML = db.medicines.filter(m => m.quantity < 10).length;
+            let today = new Date();
+            document.getElementById('expiringSoon').innerHTML = db.medicines.filter(m => { 
+                let d = (new Date(m.expiryDate) - today) / 86400000; 
+                return d <= 30 && d > 0; 
+            }).length;
+            document.getElementById('expiredItems').innerHTML = db.medicines.filter(m => new Date(m.expiryDate) < today).length;
+            document.getElementById('totalValue').innerHTML = `₹${db.medicines.reduce((s,m) => s + (m.quantity * m.price), 0).toFixed(2)}`;
+            
+            // Update inbound list
+            let inboundTbody = document.getElementById('inboundList'); 
+            if(inboundTbody) {
+                inboundTbody.innerHTML = ''; 
+                [...db.inbound].reverse().slice(0, 50).forEach(i => { 
+                    inboundTbody.innerHTML += `<tr>
+                        <td>${new Date(i.date).toLocaleDateString()}</td>
+                        <td>${i.medicineName}</td>
+                        <td>${i.quantity}</td>
+                        <td>${i.source || 'Manual'}</td>
+                    </tr>`; 
+                });
+            }
+            
+            // Filter outbound
+            filterOutboundHistory();
+            
+            // Update alerts
+            let alertDiv = document.getElementById('expiryAlertList'); 
+            if(alertDiv) {
+                alertDiv.innerHTML = ''; 
+                let expiring = db.medicines.filter(m => { 
+                    let d = (new Date(m.expiryDate) - today) / 86400000; 
+                    return d <= 30 && d > 0; 
+                }); 
+                if(!expiring.length) alertDiv.innerHTML = '<div style="background:#d4edda;padding:15px;border-radius:5px;">✅ No expiring items</div>'; 
+                else expiring.forEach(m => { 
+                    let days = Math.ceil((new Date(m.expiryDate) - today) / 86400000); 
+                    alertDiv.innerHTML += `<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin-bottom:10px;border-radius:5px;">
+                        <strong>⚠️ ${m.name}</strong><br>Stock: ${m.quantity} | Expires: ${formatDate(m.expiryDate)} | ${days} days left
+                    </div>`; 
+                });
+            }
+            
+            // Load deleted table
+            if(currentUser.role === 'admin') loadDeletedTable(); 
+            
+            // Update datalists
+            updateDatalists(); 
+            
+            // Save to local (fallback)
+            saveToLocal(); 
+            
+            // Apply filters
+            applyFiltersAndSort(); 
+            
+            // Generate report
+            if(currentUser.role === 'admin') generateReport(
+                reportStartDate || new Date(new Date().setDate(new Date().getDate() - 30)), 
+                reportEndDate || new Date()
+            );
+            
+            // Auto-save to folder (if selected)
+            if(currentFolderHandle) autoSaveToFolder();
+            
+            // 🔥 Save to Supabase (async - not blocking)
+            saveToSupabase().then(() => {
+                console.log('✅ Supabase sync completed');
+            }).catch(e => {
+                console.warn('⚠️ Supabase sync failed:', e);
+            });
+        }
+
+        // ============================================================
+        // 🔥 MODIFIED STARTAPP - WITH SUPABASE LOAD
+        // ============================================================
+        function startApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            document.getElementById('userName').textContent = currentUser.name;
+            let badge = document.getElementById('userRole');
+            badge.textContent = currentUser.role.toUpperCase();
+            if(currentUser.role === 'guest') badge.classList.add('guest');
+            if(currentUser.role === 'staff') badge.classList.add('staff');
+            
+            applyPermissions();
+            
+            // 🔥 Load from Supabase first
+            loadFromSupabase().then(() => {
+                updateAll();
+                updateDatalists();
+            }).catch(() => {
+                // Fallback to local if Supabase fails
+                loadFromLocal();
+                updateAll();
+                updateDatalists();
+            });
+            
+            // Set dates
+            let today = new Date(), last30 = new Date(); 
+            last30.setDate(today.getDate() - 30);
+            document.getElementById('reportFromDate').value = last30.toISOString().split('T')[0];
+            document.getElementById('reportToDate').value = today.toISOString().split('T')[0];
+            document.getElementById('outboundFromDate').value = last30.toISOString().split('T')[0];
+            document.getElementById('outboundToDate').value = today.toISOString().split('T')[0];
+            generateReport(last30, today);
+            document.getElementById('expiryDaysLabel').innerText = expiryDays;
+            document.getElementById('expiryFilterDays').value = expiryDays;
+            
+            // Event listeners
+            document.getElementById('searchInput').addEventListener('input', e => { 
+                currentSearch = e.target.value.toLowerCase(); 
+                applyFiltersAndSort(); 
+            });
+            document.getElementById('clearSearchBtn').addEventListener('click', () => { 
+                document.getElementById('searchInput').value = ''; 
+                currentSearch = ''; 
+                applyFiltersAndSort(); 
+            });
+            document.getElementById('categoryFilter').addEventListener('change', () => applyDashboardFilters());
+            document.getElementById('sortByFilter').addEventListener('change', () => applyDashboardFilters());
+            
+            // Start auto sync
+            startAutoSync();
+            
+            // Folder selection popup
+            if((currentUser.role === 'admin' || currentUser.role === 'staff') && !popupShown) { 
+                setTimeout(() => { document.getElementById('folderPopup').style.display = 'flex'; }, 500); 
+            }
+            
+            document.getElementById('lastRefreshTime').textContent = '⏱️ Started: ' + new Date().toLocaleTimeString();
+            showToast('✅ Welcome ' + currentUser.name + '! Data loaded from Supabase.', 'success');
+        }
+
+        // ============================================================
+        // 🔥 ADD SUPABASE BUTTON TO UI
+        // ============================================================
+        // Add a sync button in the header
+        document.addEventListener('DOMContentLoaded', function() {
+            const headerControls = document.querySelector('.header-controls .user-info');
+            if (headerControls) {
+                const syncBtn = document.createElement('button');
+                syncBtn.className = 'refresh-btn';
+                syncBtn.style.background = '#28a745';
+                syncBtn.innerHTML = '☁️ Sync';
+                syncBtn.onclick = function() {
+                    fullSync();
+                };
+                headerControls.appendChild(syncBtn);
+            }
+        });
+
+        // ============================================================
+        // ALL YOUR EXISTING EVENT LISTENERS (copy from original)
+        // ============================================================
+        // ... (copy all your event listeners from original file)
+
+        console.log('✅ SpiceJet SkyMed loaded with Supabase integration!');
+        console.log('☁️ Supabase URL:', SUPABASE_URL);
+        console.log('📦 Database ready');
+    </script>
+</body>
+</html>

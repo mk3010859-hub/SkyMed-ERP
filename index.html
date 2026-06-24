@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpiceJet SkyMed - Medical Inventory</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; min-height: 100vh; }
@@ -14,6 +14,7 @@
         .login-box { background: white; padding: 50px; border-radius: 20px; width: 420px; max-width: 90%; text-align: center; }
         .login-box h1 { color: #667eea; margin-bottom: 10px; font-size: 28px; }
         .login-btn { width: 100%; padding: 14px; margin: 10px 0; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .login-btn:hover { opacity: 0.9; }
         .guest-btn { background: #48bb78; }
         .staff-login-btn { background: #17a2b8; }
         .error-msg { color: #e53e3e; margin-top: 10px; }
@@ -113,1324 +114,1299 @@
     </style>
 </head>
 <body>
-    <div id="loginScreen" class="login-container">
-        <div class="login-box">
-            <h1>✈️ SpiceJet SkyMed</h1>
-            <p>SpiceJet Medical Department | Complete Store Management</p>
-            <button class="login-btn" onclick="showAdminLogin()">👑 Admin Login</button>
-            <button class="login-btn staff-login-btn" onclick="showStaffLogin()">👨‍⚕️ Medical Staff Login</button>
-            <button class="login-btn guest-btn" onclick="loginAsGuest()">👤 Guest Login</button>
-            <div id="loginError" class="error-msg"></div>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen" class="login-container">
+    <div class="login-box">
+        <h1>✈️ SpiceJet SkyMed</h1>
+        <p>SpiceJet Medical Department | Complete Store Management</p>
+        <button class="login-btn" onclick="showAdminLogin()">👑 Admin Login</button>
+        <button class="login-btn staff-login-btn" onclick="showStaffLogin()">👨‍⚕️ Medical Staff Login</button>
+        <button class="login-btn guest-btn" onclick="loginAsGuest()">👤 Guest Login</button>
+        <div id="loginError" class="error-msg"></div>
+    </div>
+</div>
+
+<!-- ===== FOLDER POPUP ===== -->
+<div id="folderPopup" class="folder-popup">
+    <div class="folder-popup-content">
+        <h3>📁 Select Database Folder</h3>
+        <p>Select a folder to save Excel backups automatically</p>
+        <div class="folder-popup-buttons">
+            <button class="select-folder-popup-btn" onclick="selectFolderFromPopup()">📂 Select Folder</button>
+            <button class="skip-folder-btn" onclick="skipFolderSelection()">⏭️ Skip</button>
         </div>
     </div>
+</div>
 
-    <div id="folderPopup" class="folder-popup">
-        <div class="folder-popup-content">
-            <h3>📁 Select Database Folder</h3>
-            <p>Select a folder to save Excel backups automatically</p>
-            <div class="folder-popup-buttons">
-                <button class="select-folder-popup-btn" onclick="selectFolderFromPopup()">📂 Select Folder</button>
-                <button class="skip-folder-btn" onclick="skipFolderSelection()">⏭️ Skip</button>
-            </div>
-        </div>
-    </div>
+<!-- ===== MODALS ===== -->
+<div id="adminPasswordModal" class="modal"><div class="modal-content"><h3>🔐 Admin Login</h3><input type="password" id="adminPasswordInput" style="width:100%; padding:12px; margin:10px 0" placeholder="Password"><div class="modal-buttons"><button class="save-edit-btn" onclick="verifyAdminPassword()">Login</button><button class="cancel-edit-btn" onclick="closeAdminModal()">Cancel</button></div></div></div>
+<div id="staffPasswordModal" class="modal"><div class="modal-content"><h3>👨‍⚕️ Staff Login</h3><input type="password" id="staffPasswordInput" style="width:100%; padding:12px; margin:10px 0" placeholder="Staff Password"><input type="text" id="staffNameInput" style="width:100%; padding:12px; margin:10px 0" placeholder="Your Name"><div class="modal-buttons"><button class="save-edit-btn" onclick="verifyStaffPassword()">Login</button><button class="cancel-edit-btn" onclick="closeStaffModal()">Cancel</button></div></div></div>
+<div id="editModal" class="modal"><div class="modal-content"><h3>✏️ Edit Item</h3><div class="form-group"><label>Name</label><input type="text" id="editName"></div><div class="form-group"><label>Category</label><select id="editCategory"><option>Tablet</option><option>Syrup</option><option>Injection</option><option>Capsule</option><option>Ointment</option><option>Cream</option><option>Drops</option><option>Inhaler</option><option>Spray</option><option>Sachet</option><option>General Consumable</option></select></div><div class="form-group"><label>Quantity</label><input type="number" id="editQuantity"></div><div class="form-group"><label>Price</label><input type="number" id="editPrice"></div><div class="form-group"><label>Expiry Date</label><input type="date" id="editExpiry"></div><div class="form-group"><label>Manufacturer</label><input type="text" id="editManufacturer"></div><div class="modal-buttons"><button class="save-edit-btn" onclick="saveEditItem()">Save</button><button class="cancel-edit-btn" onclick="closeEditModal()">Cancel</button></div></div></div>
 
-    <div id="adminPasswordModal" class="modal"><div class="modal-content"><h3>🔐 Admin Login</h3><input type="password" id="adminPasswordInput" style="width:100%; padding:12px; margin:10px 0" placeholder="Password"><div class="modal-buttons"><button class="save-edit-btn" onclick="verifyAdminPassword()">Login</button><button class="cancel-edit-btn" onclick="closeAdminModal()">Cancel</button></div></div></div>
-    <div id="staffPasswordModal" class="modal"><div class="modal-content"><h3>👨‍⚕️ Staff Login</h3><input type="password" id="staffPasswordInput" style="width:100%; padding:12px; margin:10px 0" placeholder="Staff Password"><input type="text" id="staffNameInput" style="width:100%; padding:12px; margin:10px 0" placeholder="Your Name"><div class="modal-buttons"><button class="save-edit-btn" onclick="verifyStaffPassword()">Login</button><button class="cancel-edit-btn" onclick="closeStaffModal()">Cancel</button></div></div></div>
-    <div id="editModal" class="modal"><div class="modal-content"><h3>✏️ Edit Item</h3><div class="form-group"><label>Name</label><input type="text" id="editName"></div><div class="form-group"><label>Category</label><select id="editCategory"><option>Tablet</option><option>Syrup</option><option>Injection</option><option>Capsule</option><option>Ointment</option><option>Cream</option><option>Drops</option><option>Inhaler</option><option>Spray</option><option>Sachet</option><option>General Consumable</option></select></div><div class="form-group"><label>Quantity</label><input type="number" id="editQuantity"></div><div class="form-group"><label>Price</label><input type="number" id="editPrice"></div><div class="form-group"><label>Expiry Date</label><input type="date" id="editExpiry"></div><div class="form-group"><label>Manufacturer</label><input type="text" id="editManufacturer"></div><div class="modal-buttons"><button class="save-edit-btn" onclick="saveEditItem()">Save</button><button class="cancel-edit-btn" onclick="closeEditModal()">Cancel</button></div></div></div>
-
-    <div id="mainApp" style="display: none;">
-        <div class="container">
-            <header>
-                <div class="header-controls">
-                    <div>
-                        <h1>✈️ SpiceJet SkyMed Inventory</h1>
-                        <p>SpiceJet Medical Department | Medicine Store Management</p>
-                    </div>
-                    <div class="user-info">
-                        <span>👤 <span id="userName">User</span></span>
-                        <span id="userRole" class="role-badge">Admin</span>
-                        <button class="refresh-btn" onclick="forceRefresh()">🔄 Refresh</button>
-                        <button class="refresh-btn" style="background:#28a745;" onclick="fullSync()">☁️ Sync</button>
-                        <span id="lastRefreshTime" class="last-refresh"></span>
-                        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-                    </div>
-                </div>
-            </header>
-
-            <div class="folder-status">
-                <div>📁 <strong>Database Folder:</strong> <span id="folderPath" class="folder-path">Not selected</span></div>
+<!-- ===== MAIN APP ===== -->
+<div id="mainApp" style="display: none;">
+    <div class="container">
+        <header>
+            <div class="header-controls">
                 <div>
-                    <button id="selectFolderBtn" onclick="selectFolder()">📂 Select Folder</button>
-                    <button id="saveToFolderBtn" onclick="saveToFolder()">💾 Save to Folder</button>
-                    <span id="autoSaveStatus" class="auto-save-indicator">✅ Auto-Save ON</span>
+                    <h1>✈️ SpiceJet SkyMed Inventory</h1>
+                    <p>SpiceJet Medical Department | Medicine Store Management</p>
+                </div>
+                <div class="user-info">
+                    <span>👤 <span id="userName">User</span></span>
+                    <span id="userRole" class="role-badge">Admin</span>
+                    <button class="refresh-btn" onclick="forceRefresh()">🔄 Refresh</button>
+                    <button class="refresh-btn" style="background:#28a745;" onclick="fullSync()">☁️ Sync</button>
+                    <span id="lastRefreshTime" class="last-refresh"></span>
+                    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
                 </div>
             </div>
+        </header>
 
-            <div class="tabs" id="mainTabs">
-                <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
-                <button class="tab-btn" data-tab="stockin">📥 Stock Inbound</button>
-                <button class="tab-btn" data-tab="stockout">📤 Stock Outbound</button>
-                <button class="tab-btn" data-tab="deleted" id="deletedTabBtn">🗑️ Deleted Items</button>
-                <button class="tab-btn" data-tab="alerts">⚠️ Alerts</button>
-                <button class="tab-btn" data-tab="reports" id="reportsTabBtn">📈 Reports</button>
-            </div>
-
-            <div id="dashboard" class="tab-content active">
-                <div class="stats-grid">
-                    <div class="stat-card" onclick="setFilter('all')"><h3>📊 Total Items</h3><p id="totalMedicines">0</p><div class="download-icon" onclick="event.stopPropagation(); exportStockToExcel()">📥</div></div>
-                    <div class="stat-card low-stock" onclick="setFilter('lowStock')"><h3>⚠️ Low Stock (&lt;10)</h3><p id="lowStock">0</p><div class="download-icon" onclick="event.stopPropagation(); exportLowStockToExcel()">📥</div></div>
-                    <div class="stat-card expiring" onclick="setFilter('expiring')"><h3>📅 Expiring in <span id="expiryDaysLabel">30</span> Days</h3><p id="expiringSoon">0</p><div class="download-icon" onclick="event.stopPropagation(); exportExpiringToExcel()">📥</div></div>
-                    <div class="stat-card expired" onclick="setFilter('expired')"><h3>❌ Expired Items</h3><p id="expiredItems">0</p><div class="download-icon" onclick="event.stopPropagation(); exportExpiredToExcel()">📥</div></div>
-                    <div class="stat-card"><h3>💰 Total Value</h3><p id="totalValue">₹0</p></div>
-                </div>
-                <div class="filter-card">
-                    <div class="filter-row">
-                        <div class="filter-group"><label>📂 Category</label><select id="categoryFilter"><option value="all">All</option><option>Tablet</option><option>Syrup</option><option>Injection</option><option>Capsule</option><option>Ointment</option><option>Cream</option><option>Drops</option><option>Inhaler</option><option>Spray</option><option>Sachet</option><option>General Consumable</option></select></div>
-                        <div class="filter-group"><label>📅 Expiry Within</label><select id="expiryFilterDays"><option value="0">No Filter</option><option value="7">7 days</option><option value="15">15 days</option><option value="30" selected>30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></div>
-                        <div class="filter-group"><label>📊 Sort By</label><select id="sortByFilter"><option value="name">Name A-Z</option><option value="stockAsc">Stock Low-High</option><option value="stockDesc">Stock High-Low</option><option value="expiryAsc">Expiry Soonest</option><option value="priceAsc">Price Low-High</option></select></div>
-                        <div class="filter-group"><button class="apply-filter-btn" onclick="applyDashboardFilters()">Apply</button><button class="reset-filter-btn" onclick="resetDashboardFilters()">Reset</button></div>
-                    </div>
-                </div>
-                <div class="search-section"><div class="search-input-wrapper"><input type="text" id="searchInput" placeholder="🔍 Search by name or manufacturer..."></div><button id="clearSearchBtn" class="reset-filter-btn">Clear</button><span id="searchStats" class="search-stats"></span></div>
-                <div id="activeFilterBadge"></div>
-                <div class="table-container"><table id="medicineTable"><thead><tr><th>ID</th><th>Item</th><th>Category</th><th>Stock</th><th>Price</th><th>Total Value</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead><tbody id="medicineList"></tbody></table></div>
-            </div>
-
-            <div id="stockin" class="tab-content">
-                <div class="excel-section">
-                    <h3>📊 Bulk Medical Stock Import via Excel</h3>
-                    <div class="excel-buttons">
-                        <button class="excel-btn download" id="downloadInboundTemplateBtn">📄 Download Template</button>
-                        <button class="excel-btn import" id="importInboundExcelBtn">📂 Import Excel</button>
-                        <button class="excel-btn" id="exportCurrentStockBtn">📊 Export Stock</button>
-                        <input type="file" id="inboundExcelFile" accept=".xlsx,.xls,.csv" style="display:none">
-                    </div>
-                </div>
-                <div class="manual-section"><h3>➕ Add Stock Manually</h3><div id="inboundPermissionMsg"></div><form id="stockInForm"><div class="form-grid"><div class="form-group"><label>Item Name *</label><input type="text" id="medName" list="medicineNames" required><datalist id="medicineNames"></datalist></div><div class="form-group"><label>Category *</label><select id="medCategory"><option>Tablet</option><option>Syrup</option><option>Injection</option><option>Capsule</option><option>Ointment</option><option>Cream</option><option>Drops</option><option>Inhaler</option><option>Spray</option><option>Sachet</option><option>General Consumable</option></select></div><div class="form-group"><label>Quantity *</label><input type="number" id="medQuantity" required min="1"></div><div class="form-group"><label>Price (₹) *</label><input type="number" id="medPrice" step="0.01" required></div><div class="form-group"><label>Expiry Date *</label><input type="date" id="medExpiry" required></div><div class="form-group"><label>Manufacturer</label><input type="text" id="medManufacturer"></div></div><button type="submit" id="addStockBtn">➕ Add Stock</button></form></div>
-                <h3>📋 Inbound History</h3><div class="table-container"><table id="inboundTable"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Source</th></tr></thead><tbody id="inboundList"></tbody></table></div>
-            </div>
-
-            <div id="stockout" class="tab-content">
-                <div class="excel-section">
-                    <h3>📊 Bulk Issue via Excel</h3>
-                    <div class="excel-buttons">
-                        <button class="excel-btn download" id="downloadOutboundTemplateBtn">📄 Download Template</button>
-                        <button class="excel-btn import" id="importOutboundExcelBtn">📂 Import Excel</button>
-                        <button class="excel-btn" id="exportSalesReportBtn">📊 Export Report</button>
-                        <input type="file" id="outboundExcelFile" accept=".xlsx,.xls,.csv" style="display:none">
-                    </div>
-                </div>
-                <div class="manual-section"><h3>💰 Issue Manually</h3><div id="outboundPermissionMsg"></div><form id="stockOutForm"><div class="form-grid"><div class="form-group"><label>Item *</label><input type="text" id="sellMedicineInput" list="medicineNamesOutbound" required><datalist id="medicineNamesOutbound"></datalist></div><div class="form-group"><label>Quantity *</label><input type="number" id="sellQuantity" required min="1"></div><div class="form-group"><label>Issued To</label><input type="text" id="customerName" placeholder="Pilot/Crew/Department"></div></div><button type="submit" id="sellBtn">✈️ Issue</button></form></div>
-                <h3>📋 Outbound History</h3><div class="filter-row" style="margin-bottom:15px;padding:10px;background:#f8f9fa;border-radius:8px;"><div class="filter-group"><label>From Date</label><input type="date" id="outboundFromDate"></div><div class="filter-group"><label>To Date</label><input type="date" id="outboundToDate"></div><div class="filter-group"><label>Issued To</label><input type="text" id="outboundSearch" placeholder="Search..."></div><div><button class="apply-filter-btn" onclick="filterOutboundHistory()">🔍 Filter</button><button class="reset-filter-btn" onclick="resetOutboundFilters()">Reset</button></div></div>
-                <div class="table-container"><table id="outboundTable"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Total</th><th>Issued To</th><th>Source</th></tr></thead><tbody id="outboundList"></tbody></table></div>
-            </div>
-
-            <div id="deleted" class="tab-content">
-                <h2>🗑️ Deleted Medical Items (Recoverable)</h2>
-                <div class="excel-buttons" style="margin-bottom:15px;"><button class="excel-btn download" onclick="exportDeletedToExcel()">📊 Export Deleted</button></div>
-                <div class="table-container"><table id="deletedTable"><thead><tr><th>Item Name</th><th>Category</th><th>Qty</th><th>Price</th><th>Deleted By</th><th>Deleted At</th><th>Action</th></tr></thead><tbody id="deletedList"></tbody></table></div>
-                <button id="clearAllDeletedBtn" style="background:#dc3545;color:white;padding:10px;margin-top:20px;border:none;border-radius:5px;">⚠️ Clear All Deleted</button>
-            </div>
-
-            <div id="alerts" class="tab-content"><h2>⚠️ Expiring Soon (30 Days)</h2><div id="expiryAlertList"></div></div>
-
-            <div id="reports" class="tab-content">
-                <div class="report-builder">
-                    <div class="report-header">📅 Period Selection</div>
-                    <div class="report-body">
-                        <div class="period-buttons"><button class="period-btn" onclick="setPeriod('today')">Today</button><button class="period-btn" onclick="setPeriod('thisWeek')">This Week</button><button class="period-btn" onclick="setPeriod('thisMonth')">This Month</button><button class="period-btn" onclick="setPeriod('lastMonth')">Last Month</button><button class="period-btn" onclick="setPeriod('thisQuarter')">This Quarter</button><button class="period-btn" onclick="setPeriod('thisYear')">This Year</button></div>
-                        <div class="date-range"><div class="form-group"><label>From:</label><input type="date" id="reportFromDate"></div><div class="form-group"><label>To:</label><input type="date" id="reportToDate"></div><button class="excel-btn" onclick="applyCustomDateRange()" style="background:#667eea">Apply</button></div>
-                        <div class="report-summary"><div class="summary-grid"><div class="summary-card"><h4>📥 Total Inbound</h4><p id="summaryInboundQty">0</p><small id="summaryInboundVal">₹0</small></div><div class="summary-card"><h4>📤 Total Outbound</h4><p id="summaryOutboundQty">0</p><small id="summaryOutboundVal">₹0</small></div><div class="summary-card"><h4>📊 Net Movement</h4><p id="summaryNetQty">0</p><small id="summaryNetVal">₹0</small></div><div class="summary-card"><h4>💰 Avg Issue Value</h4><p id="avgIssueVal">₹0</p></div></div></div>
-                        <div class="excel-buttons"><button class="excel-btn" onclick="exportPeriodReport()">📥 Period Report</button><button class="excel-btn" onclick="exportInboundDetail()" style="background:#17a2b8">📋 Inbound Detail</button><button class="excel-btn" onclick="exportOutboundDetail()" style="background:#ff9800">📋 Outbound Detail</button></div>
-                    </div>
-                </div>
-                <div class="report-builder"><div class="report-header">📋 Transaction Details</div><div class="report-body"><div class="search-section"><div class="search-input-wrapper"><input type="text" id="reportSearch" placeholder="Filter..."></div><button id="clearReportSearch" class="reset-filter-btn">Clear</button></div><div class="table-container"><table id="reportTable"><thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Value</th><th>Source/To</th></tr></thead><tbody id="reportBody"></tbody></table></div></div></div>
-                <div class="backup-section"><h3>💾 Backup & Restore</h3><button class="excel-btn" onclick="exportFullBackup()">📥 JSON Backup</button><button class="excel-btn" onclick="document.getElementById('backupFile').click()">📤 Restore</button><input type="file" id="backupFile" accept=".json" style="display:none"><button class="excel-btn" onclick="exportAllToExcel()" style="background:#17a2b8">📑 Complete Excel (4 Sheets)</button><button id="resetAllDataBtn" style="background:#dc3545;">⚠️ Reset All</button></div>
+        <div class="folder-status">
+            <div>📁 <strong>Database Folder:</strong> <span id="folderPath" class="folder-path">Not selected</span></div>
+            <div>
+                <button id="selectFolderBtn" onclick="selectFolder()">📂 Select Folder</button>
+                <button id="saveToFolderBtn" onclick="saveToFolder()">💾 Save to Folder</button>
+                <span id="autoSaveStatus" class="auto-save-indicator">✅ Auto-Save ON</span>
             </div>
         </div>
-        <div class="footer">✈️ SpiceJet SkyMed Inventory | Created by <strong><a href="https://www.linkedin.com/in/ram-kumar-60072454/" target="_blank">Ram Kumar</a></strong> | 📱 <a href="tel:+919736438856">+91 97364 38856</a></div>
+
+        <div class="tabs" id="mainTabs">
+            <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab-btn" data-tab="stockin">📥 Stock Inbound</button>
+            <button class="tab-btn" data-tab="stockout">📤 Stock Outbound</button>
+            <button class="tab-btn" data-tab="deleted" id="deletedTabBtn">🗑️ Deleted Items</button>
+            <button class="tab-btn" data-tab="alerts">⚠️ Alerts</button>
+            <button class="tab-btn" data-tab="reports" id="reportsTabBtn">📈 Reports</button>
+        </div>
+
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card" onclick="setFilter('all')"><h3>📊 Total Items</h3><p id="totalMedicines">0</p><div class="download-icon" onclick="event.stopPropagation(); exportStockToExcel()">📥</div></div>
+                <div class="stat-card low-stock" onclick="setFilter('lowStock')"><h3>⚠️ Low Stock (&lt;10)</h3><p id="lowStock">0</p><div class="download-icon" onclick="event.stopPropagation(); exportLowStockToExcel()">📥</div></div>
+                <div class="stat-card expiring" onclick="setFilter('expiring')"><h3>📅 Expiring in <span id="expiryDaysLabel">30</span> Days</h3><p id="expiringSoon">0</p><div class="download-icon" onclick="event.stopPropagation(); exportExpiringToExcel()">📥</div></div>
+                <div class="stat-card expired" onclick="setFilter('expired')"><h3>❌ Expired Items</h3><p id="expiredItems">0</p><div class="download-icon" onclick="event.stopPropagation(); exportExpiredToExcel()">📥</div></div>
+                <div class="stat-card"><h3>💰 Total Value</h3><p id="totalValue">₹0</p></div>
+            </div>
+            <div class="filter-card">
+                <div class="filter-row">
+                    <div class="filter-group"><label>📂 Category</label><select id="categoryFilter"><option value="all">All</option><option>Tablet</option><option>Syrup</option><option>Injection</option><option>Capsule</option><option>Ointment</option><option>Cream</option><option>Drops</option><option>Inhaler</option><option>Spray</option><option>Sachet</option><option>General Consumable</option></select></div>
+                    <div class="filter-group"><label>📅 Expiry Within</label><select id="expiryFilterDays"><option value="0">No Filter</option><option value="7">7 days</option><option value="15">15 days</option><option value="30" selected>30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></div>
+                    <div class="filter-group"><label>📊 Sort By</label><select id="sortByFilter"><option value="name">Name A-Z</option><option value="stockAsc">Stock Low-High</option><option value="stockDesc">Stock High-Low</option><option value="expiryAsc">Expiry Soonest</option><option value="priceAsc">Price Low-High</option></select></div>
+                    <div class="filter-group"><button class="apply-filter-btn" onclick="applyDashboardFilters()">Apply</button><button class="reset-filter-btn" onclick="resetDashboardFilters()">Reset</button></div>
+                </div>
+            </div>
+            <div class="search-section"><div class="search-input-wrapper"><input type="text" id="searchInput" placeholder="🔍 Search by name or manufacturer..."></div><button id="clearSearchBtn" class="reset-filter-btn">Clear</button><span id="searchStats" class="search-stats"></span></div>
+            <div id="activeFilterBadge"></div>
+            <div class="table-container"><table id="medicineTable"><thead><tr><th>ID</th><th>Item</th><th>Category</th><th>Stock</th><th>Price</th><th>Total Value</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead><tbody id="medicineList"></tbody></table></div>
+        </div>
+
+        <div id="stockin" class="tab-content">
+            <div class="excel-section">
+                <h3>📊 Bulk Medical Stock Import via Excel</h3>
+                <div class="excel-buttons">
+                    <button class="excel-btn download" id="downloadInboundTemplateBtn">📄 Download Template</button>
+                    <button class="excel-btn import" id="importInboundExcelBtn">📂 Import Excel</button>
+                    <button class="excel-btn" id="exportCurrentStockBtn">📊 Export Stock</button>
+                    <input type="file" id="inboundExcelFile" accept=".xlsx,.xls,.csv" style="display:none">
+                </div>
+            </div>
+            <div class="manual-section"><h3>➕ Add Stock Manually</h3><div id="inboundPermissionMsg"></div><form id="stockInForm"><div class="form-grid"><div class="form-group"><label>Item Name *</label><input type="text" id="medName" list="medicineNames" required><datalist id="medicineNames"></datalist></div><div class="form-group"><label>Category *</label><select id="medCategory"><option>Tablet</option><option>Syrup</option><option>Injection</option><option>Capsule</option><option>Ointment</option><option>Cream</option><option>Drops</option><option>Inhaler</option><option>Spray</option><option>Sachet</option><option>General Consumable</option></select></div><div class="form-group"><label>Quantity *</label><input type="number" id="medQuantity" required min="1"></div><div class="form-group"><label>Price (₹) *</label><input type="number" id="medPrice" step="0.01" required></div><div class="form-group"><label>Expiry Date *</label><input type="date" id="medExpiry" required></div><div class="form-group"><label>Manufacturer</label><input type="text" id="medManufacturer"></div></div><button type="submit" id="addStockBtn">➕ Add Stock</button></form></div>
+            <h3>📋 Inbound History</h3><div class="table-container"><table id="inboundTable"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Source</th></tr></thead><tbody id="inboundList"></tbody></table></div>
+        </div>
+
+        <div id="stockout" class="tab-content">
+            <div class="excel-section">
+                <h3>📊 Bulk Issue via Excel</h3>
+                <div class="excel-buttons">
+                    <button class="excel-btn download" id="downloadOutboundTemplateBtn">📄 Download Template</button>
+                    <button class="excel-btn import" id="importOutboundExcelBtn">📂 Import Excel</button>
+                    <button class="excel-btn" id="exportSalesReportBtn">📊 Export Report</button>
+                    <input type="file" id="outboundExcelFile" accept=".xlsx,.xls,.csv" style="display:none">
+                </div>
+            </div>
+            <div class="manual-section"><h3>💰 Issue Manually</h3><div id="outboundPermissionMsg"></div><form id="stockOutForm"><div class="form-grid"><div class="form-group"><label>Item *</label><input type="text" id="sellMedicineInput" list="medicineNamesOutbound" required><datalist id="medicineNamesOutbound"></datalist></div><div class="form-group"><label>Quantity *</label><input type="number" id="sellQuantity" required min="1"></div><div class="form-group"><label>Issued To</label><input type="text" id="customerName" placeholder="Pilot/Crew/Department"></div></div><button type="submit" id="sellBtn">✈️ Issue</button></form></div>
+            <h3>📋 Outbound History</h3><div class="filter-row" style="margin-bottom:15px;padding:10px;background:#f8f9fa;border-radius:8px;"><div class="filter-group"><label>From Date</label><input type="date" id="outboundFromDate"></div><div class="filter-group"><label>To Date</label><input type="date" id="outboundToDate"></div><div class="filter-group"><label>Issued To</label><input type="text" id="outboundSearch" placeholder="Search..."></div><div><button class="apply-filter-btn" onclick="filterOutboundHistory()">🔍 Filter</button><button class="reset-filter-btn" onclick="resetOutboundFilters()">Reset</button></div></div>
+            <div class="table-container"><table id="outboundTable"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Total</th><th>Issued To</th><th>Source</th></tr></thead><tbody id="outboundList"></tbody></table></div>
+        </div>
+
+        <div id="deleted" class="tab-content">
+            <h2>🗑️ Deleted Medical Items (Recoverable)</h2>
+            <div class="excel-buttons" style="margin-bottom:15px;"><button class="excel-btn download" onclick="exportDeletedToExcel()">📊 Export Deleted</button></div>
+            <div class="table-container"><table id="deletedTable"><thead><tr><th>Item Name</th><th>Category</th><th>Qty</th><th>Price</th><th>Deleted By</th><th>Deleted At</th><th>Action</th></tr></thead><tbody id="deletedList"></tbody></table></div>
+            <button id="clearAllDeletedBtn" style="background:#dc3545;color:white;padding:10px;margin-top:20px;border:none;border-radius:5px;">⚠️ Clear All Deleted</button>
+        </div>
+
+        <div id="alerts" class="tab-content"><h2>⚠️ Expiring Soon (30 Days)</h2><div id="expiryAlertList"></div></div>
+
+        <div id="reports" class="tab-content">
+            <div class="report-builder">
+                <div class="report-header">📅 Period Selection</div>
+                <div class="report-body">
+                    <div class="period-buttons"><button class="period-btn" onclick="setPeriod('today')">Today</button><button class="period-btn" onclick="setPeriod('thisWeek')">This Week</button><button class="period-btn" onclick="setPeriod('thisMonth')">This Month</button><button class="period-btn" onclick="setPeriod('lastMonth')">Last Month</button><button class="period-btn" onclick="setPeriod('thisQuarter')">This Quarter</button><button class="period-btn" onclick="setPeriod('thisYear')">This Year</button></div>
+                    <div class="date-range"><div class="form-group"><label>From:</label><input type="date" id="reportFromDate"></div><div class="form-group"><label>To:</label><input type="date" id="reportToDate"></div><button class="excel-btn" onclick="applyCustomDateRange()" style="background:#667eea">Apply</button></div>
+                    <div class="report-summary"><div class="summary-grid"><div class="summary-card"><h4>📥 Total Inbound</h4><p id="summaryInboundQty">0</p><small id="summaryInboundVal">₹0</small></div><div class="summary-card"><h4>📤 Total Outbound</h4><p id="summaryOutboundQty">0</p><small id="summaryOutboundVal">₹0</small></div><div class="summary-card"><h4>📊 Net Movement</h4><p id="summaryNetQty">0</p><small id="summaryNetVal">₹0</small></div><div class="summary-card"><h4>💰 Avg Issue Value</h4><p id="avgIssueVal">₹0</p></div></div></div>
+                    <div class="excel-buttons"><button class="excel-btn" onclick="exportPeriodReport()">📥 Period Report</button><button class="excel-btn" onclick="exportInboundDetail()" style="background:#17a2b8">📋 Inbound Detail</button><button class="excel-btn" onclick="exportOutboundDetail()" style="background:#ff9800">📋 Outbound Detail</button></div>
+                </div>
+            </div>
+            <div class="report-builder"><div class="report-header">📋 Transaction Details</div><div class="report-body"><div class="search-section"><div class="search-input-wrapper"><input type="text" id="reportSearch" placeholder="Filter..."></div><button id="clearReportSearch" class="reset-filter-btn">Clear</button></div><div class="table-container"><table id="reportTable"><thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Value</th><th>Source/To</th></tr></thead><tbody id="reportBody"></tbody></table></div></div></div>
+            <div class="backup-section"><h3>💾 Backup & Restore</h3><button class="excel-btn" onclick="exportFullBackup()">📥 JSON Backup</button><button class="excel-btn" onclick="document.getElementById('backupFile').click()">📤 Restore</button><input type="file" id="backupFile" accept=".json" style="display:none"><button class="excel-btn" onclick="exportAllToExcel()" style="background:#17a2b8">📑 Complete Excel (4 Sheets)</button><button id="resetAllDataBtn" style="background:#dc3545;">⚠️ Reset All</button></div>
+        </div>
     </div>
+    <div class="footer">✈️ SpiceJet SkyMed Inventory | Created by <strong><a href="https://www.linkedin.com/in/ram-kumar-60072454/" target="_blank">Ram Kumar</a></strong> | 📱 <a href="tel:+919736438856">+91 97364 38856</a></div>
+</div>
 
-    <script>
-        // Disable inspect
-        document.addEventListener('keydown', e => { if(e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'u')) e.preventDefault(); });
-        document.addEventListener('contextmenu', e => e.preventDefault());
+<script>
+    // Disable inspect
+    document.addEventListener('keydown', e => { if(e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'u')) e.preventDefault(); });
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
-        // ============================================================
-        // 🔥 SUPABASE CONFIG - CHANGE HERE
-        // ============================================================
-        const SUPABASE_URL = 'https://nxfvrolgauzxhkadlnux.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_SwppONsYbyd6CMmyOHxEIQ__GnTdP3R'; // 
+    // ============================================================
+    // 🔥 SUPABASE CONFIG - YOUR NEW CREDENTIALS
+    // ============================================================
+    const SUPABASE_URL = 'https://nxfvrolgauzxhkadlnux.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_SwppONsYbyd6CMmyOHxEIQ__GnTdP3R';
+    
+    // Initialize Supabase client
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ============================================================
+    // 🔥 LOGIN FUNCTIONS - FIXED
+    // ============================================================
+    function showAdminLogin() {
+        document.getElementById('adminPasswordModal').style.display = 'flex';
+        document.getElementById('adminPasswordInput').value = '';
+        document.getElementById('loginError').innerHTML = '';
+    }
+
+    function showStaffLogin() {
+        document.getElementById('staffPasswordModal').style.display = 'flex';
+        document.getElementById('staffNameInput').value = '';
+        document.getElementById('staffPasswordInput').value = '';
+        document.getElementById('loginError').innerHTML = '';
+    }
+
+    function closeAdminModal() {
+        document.getElementById('adminPasswordModal').style.display = 'none';
+    }
+
+    function closeStaffModal() {
+        document.getElementById('staffPasswordModal').style.display = 'none';
+    }
+
+    function verifyAdminPassword() {
+        const pwd = document.getElementById('adminPasswordInput').value;
+        if (pwd === 'admin123') {
+            currentUser = { name: 'Administrator', role: 'admin' };
+            closeAdminModal();
+            startApp();
+        } else {
+            document.getElementById('loginError').innerHTML = '❌ Wrong password!';
+        }
+    }
+
+    function verifyStaffPassword() {
+        const name = document.getElementById('staffNameInput').value.trim();
+        const pwd = document.getElementById('staffPasswordInput').value;
+        if (!name) {
+            document.getElementById('loginError').innerHTML = '❌ Name is required!';
+            return;
+        }
+        if (pwd === 'staff123') {
+            currentUser = { name: name, role: 'staff' };
+            closeStaffModal();
+            startApp();
+        } else {
+            document.getElementById('loginError').innerHTML = '❌ Wrong password!';
+        }
+    }
+
+    function loginAsGuest() {
+        const name = prompt('👤 Enter your name:', 'Guest');
+        if (name !== null) {
+            currentUser = { name: name || 'Guest', role: 'guest' };
+            startApp();
+        }
+    }
+
+    // ============================================================
+    // MAIN APP CODE
+    // ============================================================
+    const ADMIN_PWD = "YWRtaW4xMjM=";
+    const STAFF_PWD = "c3RhZmYxMjM=";
+    function decode(p) { try { return atob(p); } catch(e) { return ""; } }
+
+    function generateUniqueId() {
+        if (window.crypto && window.crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 9) + performance.now().toString(36).replace('.', '');
+    }
+
+    let currentUser = { name: '', role: 'guest' };
+    let db = { medicines: [], inbound: [], outbound: [], deletedItems: [], config: {} };
+    let currentFilter = "all", expiryDays = 30, currentSearch = "", categoryFilter = "all", sortBy = "name";
+    let reportStartDate = null, reportEndDate = null;
+    let currentFolderHandle = null, autoSaveTimer = null, popupShown = false;
+    let refreshInterval = null;
+    let isSyncing = false;
+
+    function formatDate(d) { if(!d) return '-'; let date = new Date(d); return `${date.getDate().toString().padStart(2,'0')}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][date.getMonth()]}-${date.getFullYear().toString().slice(-2)}`; }
+    function getDateTime() { return new Date().toLocaleString('en-IN', { hour12: false }); }
+
+    // ============ TOAST NOTIFICATIONS ============
+    function showToast(message, type = 'info') {
+        const existing = document.querySelector('.toast');
+        if(existing) existing.remove();
         
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if(toast.parentNode) toast.remove();
+        }, 3000);
+    }
 
-        const ADMIN_PWD = "YWRtaW4xMjM=";
-        const STAFF_PWD = "c3RhZmYxMjM=";
-        function decode(p) { try { return atob(p); } catch(e) { return ""; } }
-
-        function generateUniqueId() {
-            if (window.crypto && window.crypto.randomUUID) {
-                return crypto.randomUUID();
+    // ============ SUPABASE SYNC FUNCTIONS ============
+    async function loadFromSupabase() {
+        try {
+            console.log('☁️ Loading data from Supabase...');
+            isSyncing = true;
+            
+            const [medicinesRes, inboundRes, outboundRes, deletedRes, configRes] = await Promise.all([
+                supabase.from('medicines').select('*'),
+                supabase.from('inbound').select('*'),
+                supabase.from('outbound').select('*'),
+                supabase.from('deleted_items').select('*'),
+                supabase.from('config').select('*')
+            ]);
+            
+            if (medicinesRes.error) throw medicinesRes.error;
+            if (inboundRes.error) throw inboundRes.error;
+            if (outboundRes.error) throw outboundRes.error;
+            if (deletedRes.error) throw deletedRes.error;
+            
+            db.medicines = medicinesRes.data || [];
+            db.inbound = inboundRes.data || [];
+            db.outbound = outboundRes.data || [];
+            db.deletedItems = deletedRes.data || [];
+            
+            if (configRes.data && configRes.data.length > 0) {
+                db.config = configRes.data[0].value || {};
             }
-            return Date.now().toString(36) + Math.random().toString(36).substr(2, 9) + performance.now().toString(36).replace('.', '');
-        }
-
-        let currentUser = { name: '', role: 'guest' };
-        let db = { medicines: [], inbound: [], outbound: [], deletedItems: [], config: {} };
-        let currentFilter = "all", expiryDays = 30, currentSearch = "", categoryFilter = "all", sortBy = "name";
-        let reportStartDate = null, reportEndDate = null;
-        let currentFolderHandle = null, autoSaveTimer = null, popupShown = false;
-        let refreshInterval = null;
-        let isSyncing = false;
-
-        function formatDate(d) { if(!d) return '-'; let date = new Date(d); return `${date.getDate().toString().padStart(2,'0')}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][date.getMonth()]}-${date.getFullYear().toString().slice(-2)}`; }
-        function getDateTime() { return new Date().toLocaleString('en-IN', { hour12: false }); }
-
-        // ============ TOAST NOTIFICATIONS ============
-        function showToast(message, type = 'info') {
-            const existing = document.querySelector('.toast');
-            if(existing) existing.remove();
             
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                if(toast.parentNode) toast.remove();
-            }, 3000);
+            console.log(`✅ Loaded: ${db.medicines.length} medicines, ${db.inbound.length} inbound, ${db.outbound.length} outbound`);
+            isSyncing = false;
+            return true;
+        } catch(e) {
+            console.error('❌ Supabase load failed:', e);
+            isSyncing = false;
+            return false;
         }
+    }
 
-        // ============ SUPABASE SYNC FUNCTIONS ============
-        async function loadFromSupabase() {
+    async function saveToSupabase() {
+        if (isSyncing) {
+            console.log('⏳ Sync already in progress');
+            return false;
+        }
+        
+        try {
+            console.log('☁️ Saving data to Supabase...');
+            isSyncing = true;
+            
+            const { error: medErr } = await supabase
+                .from('medicines')
+                .upsert(db.medicines, { onConflict: 'id' });
+            if (medErr) throw medErr;
+            
+            const { error: inErr } = await supabase
+                .from('inbound')
+                .upsert(db.inbound, { onConflict: 'id' });
+            if (inErr) throw inErr;
+            
+            const { error: outErr } = await supabase
+                .from('outbound')
+                .upsert(db.outbound, { onConflict: 'id' });
+            if (outErr) throw outErr;
+            
+            const { error: delErr } = await supabase
+                .from('deleted_items')
+                .upsert(db.deletedItems, { onConflict: 'id' });
+            if (delErr) throw delErr;
+            
+            const { error: cfgErr } = await supabase
+                .from('config')
+                .upsert({ key: 'main', value: db.config }, { onConflict: 'key' });
+            if (cfgErr) throw cfgErr;
+            
+            console.log('✅ Data saved to Supabase');
+            isSyncing = false;
+            return true;
+        } catch(e) {
+            console.error('❌ Supabase save failed:', e);
+            isSyncing = false;
+            return false;
+        }
+    }
+
+    async function fullSync() {
+        showToast('☁️ Syncing with Supabase...', 'info');
+        await loadFromSupabase();
+        updateAll();
+        updateDatalists();
+        showToast('✅ Data synced with Supabase cloud!', 'success');
+    }
+
+    // ============ LOCAL STORAGE (FALLBACK) ============
+    function saveToLocal() { localStorage.setItem('spicejetDB', JSON.stringify(db)); }
+    
+    function loadFromLocal() { 
+        let saved = localStorage.getItem('spicejetDB'); 
+        if(saved) { 
             try {
-                console.log('☁️ Loading data from Supabase...');
-                isSyncing = true;
-                
-                const [medicinesRes, inboundRes, outboundRes, deletedRes, configRes] = await Promise.all([
-                    supabase.from('medicines').select('*'),
-                    supabase.from('inbound').select('*'),
-                    supabase.from('outbound').select('*'),
-                    supabase.from('deleted_items').select('*'),
-                    supabase.from('config').select('*')
-                ]);
-                
-                if (medicinesRes.error) throw medicinesRes.error;
-                if (inboundRes.error) throw inboundRes.error;
-                if (outboundRes.error) throw outboundRes.error;
-                if (deletedRes.error) throw deletedRes.error;
-                
-                db.medicines = medicinesRes.data || [];
-                db.inbound = inboundRes.data || [];
-                db.outbound = outboundRes.data || [];
-                db.deletedItems = deletedRes.data || [];
-                
-                if (configRes.data && configRes.data.length > 0) {
-                    db.config = configRes.data[0].value || {};
-                }
-                
-                console.log(`✅ Loaded: ${db.medicines.length} medicines, ${db.inbound.length} inbound, ${db.outbound.length} outbound`);
-                isSyncing = false;
-                return true;
+                const parsed = JSON.parse(saved);
+                db = parsed;
+                if(!db.deletedItems) db.deletedItems = []; 
+                if(!db.config) db.config = {};
+                if(!db.inbound) db.inbound = [];
+                if(!db.outbound) db.outbound = [];
+                if(!db.medicines) db.medicines = [];
             } catch(e) {
-                console.error('❌ Supabase load failed:', e);
-                isSyncing = false;
-                return false;
+                console.error('Error loading data:', e);
             }
-        }
+        } 
+        updateAll(); 
+    }
 
-        async function saveToSupabase() {
-            if (isSyncing) {
-                console.log('⏳ Sync already in progress');
-                return false;
-            }
-            
-            try {
-                console.log('☁️ Saving data to Supabase...');
-                isSyncing = true;
-                
-                const { error: medErr } = await supabase
-                    .from('medicines')
-                    .upsert(db.medicines, { onConflict: 'id' });
-                if (medErr) throw medErr;
-                
-                const { error: inErr } = await supabase
-                    .from('inbound')
-                    .upsert(db.inbound, { onConflict: 'id' });
-                if (inErr) throw inErr;
-                
-                const { error: outErr } = await supabase
-                    .from('outbound')
-                    .upsert(db.outbound, { onConflict: 'id' });
-                if (outErr) throw outErr;
-                
-                const { error: delErr } = await supabase
-                    .from('deleted_items')
-                    .upsert(db.deletedItems, { onConflict: 'id' });
-                if (delErr) throw delErr;
-                
-                const { error: cfgErr } = await supabase
-                    .from('config')
-                    .upsert({ key: 'main', value: db.config }, { onConflict: 'key' });
-                if (cfgErr) throw cfgErr;
-                
-                console.log('✅ Data saved to Supabase');
-                isSyncing = false;
-                return true;
-            } catch(e) {
-                console.error('❌ Supabase save failed:', e);
-                isSyncing = false;
-                return false;
-            }
-        }
-
-        async function fullSync() {
-            showToast('☁️ Syncing with Supabase...', 'info');
-            await loadFromSupabase();
+    // ============ FORCE REFRESH ============
+    function forceRefresh() {
+        const time = new Date().toLocaleTimeString();
+        document.getElementById('lastRefreshTime').textContent = '⏱️ Last refresh: ' + time;
+        
+        loadFromSupabase().then(() => {
             updateAll();
             updateDatalists();
-            showToast('✅ Data synced with Supabase cloud!', 'success');
-        }
-
-        // ============ LOCAL STORAGE (FALLBACK) ============
-        function saveToLocal() { localStorage.setItem('spicejetDB', JSON.stringify(db)); }
+            showToast('✅ Data refreshed from Supabase!', 'success');
+        }).catch(() => {
+            loadFromLocal();
+            showToast('✅ Refreshed from local storage', 'info');
+        });
         
-        function loadFromLocal() { 
-            let saved = localStorage.getItem('spicejetDB'); 
-            if(saved) { 
-                try {
-                    const parsed = JSON.parse(saved);
-                    db = parsed;
-                    if(!db.deletedItems) db.deletedItems = []; 
-                    if(!db.config) db.config = {};
-                    if(!db.inbound) db.inbound = [];
-                    if(!db.outbound) db.outbound = [];
-                    if(!db.medicines) db.medicines = [];
-                } catch(e) {
-                    console.error('Error loading data:', e);
-                }
-            } 
-            updateAll(); 
-        }
+        const btn = document.querySelector('.refresh-btn');
+        btn.style.transform = 'rotate(360deg)';
+        btn.style.transition = 'transform 0.5s';
+        setTimeout(() => {
+            btn.style.transform = 'rotate(0deg)';
+        }, 500);
+    }
 
-        // ============ FORCE REFRESH ============
-        function forceRefresh() {
+    // ============ AUTO REFRESH ON TAB VISIBILITY ============
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
             const time = new Date().toLocaleTimeString();
-            document.getElementById('lastRefreshTime').textContent = '⏱️ Last refresh: ' + time;
-            
+            document.getElementById('lastRefreshTime').textContent = '⏱️ Auto-refresh: ' + time;
             loadFromSupabase().then(() => {
                 updateAll();
                 updateDatalists();
-                showToast('✅ Data refreshed from Supabase!', 'success');
-            }).catch(() => {
-                loadFromLocal();
-                showToast('✅ Refreshed from local storage', 'info');
             });
-            
-            const btn = document.querySelector('.refresh-btn');
-            btn.style.transform = 'rotate(360deg)';
-            btn.style.transition = 'transform 0.5s';
-            setTimeout(() => {
-                btn.style.transform = 'rotate(0deg)';
-            }, 500);
         }
+    });
 
-        // ============ AUTO REFRESH ON TAB VISIBILITY ============
-        document.addEventListener('visibilitychange', function() {
+    // ============ PERIODIC AUTO SYNC (Every 30 seconds) ============
+    function startAutoSync() {
+        if(refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(() => {
             if (!document.hidden) {
-                const time = new Date().toLocaleTimeString();
-                document.getElementById('lastRefreshTime').textContent = '⏱️ Auto-refresh: ' + time;
+                saveToSupabase();
                 loadFromSupabase().then(() => {
                     updateAll();
                     updateDatalists();
                 });
             }
-        });
+        }, 30000);
+    }
 
-        // ============ PERIODIC AUTO SYNC (Every 30 seconds) ============
-        function startAutoSync() {
-            if(refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(() => {
-                if (!document.hidden) {
-                    saveToSupabase();
-                    loadFromSupabase().then(() => {
-                        updateAll();
-                        updateDatalists();
-                    });
-                }
-            }, 30000);
-        }
-
-        // ============ PERMISSIONS ============
-        function applyPermissions() {
-            let isAdmin = currentUser.role === 'admin';
-            let isStaff = currentUser.role === 'staff';
-            let isGuest = currentUser.role === 'guest';
-            
-            document.getElementById('selectFolderBtn').disabled = !(isAdmin || isStaff);
-            document.getElementById('saveToFolderBtn').disabled = !(isAdmin || isStaff);
-            document.getElementById('addStockBtn').disabled = !(isAdmin || isStaff);
-            document.getElementById('sellBtn').disabled = !(isAdmin || isStaff);
-            document.getElementById('importInboundExcelBtn').disabled = !(isAdmin || isStaff);
-            document.getElementById('importOutboundExcelBtn').disabled = !(isAdmin || isStaff);
-            document.getElementById('resetAllDataBtn').disabled = !isAdmin;
-            document.getElementById('clearAllDeletedBtn').disabled = !isAdmin;
-            
-            let deletedTab = document.getElementById('deletedTabBtn');
-            let reportsTab = document.getElementById('reportsTabBtn');
-            
-            if(deletedTab) {
-                if(isAdmin) {
-                    deletedTab.classList.remove('hidden');
-                } else {
-                    deletedTab.classList.add('hidden');
-                    if(document.getElementById('deleted').classList.contains('active')) {
-                        document.querySelector('.tab-btn[data-tab="dashboard"]').click();
-                    }
-                }
-            }
-            
-            if(reportsTab) {
-                if(isAdmin) {
-                    reportsTab.classList.remove('hidden');
-                } else {
-                    reportsTab.classList.add('hidden');
-                    if(document.getElementById('reports').classList.contains('active')) {
-                        document.querySelector('.tab-btn[data-tab="dashboard"]').click();
-                    }
-                }
-            }
-            
-            if(isGuest) {
-                document.getElementById('inboundPermissionMsg').innerHTML = '<div class="permission-denied">⚠️ Guest Mode: View only. Login as Staff or Admin to add items.</div>';
-                document.getElementById('outboundPermissionMsg').innerHTML = '<div class="permission-denied">⚠️ Guest Mode: View only. Login as Staff or Admin to issue items.</div>';
-                document.querySelectorAll('#stockInForm input, #stockInForm select, #stockOutForm input').forEach(i => i.disabled = true);
+    // ============ PERMISSIONS ============
+    function applyPermissions() {
+        let isAdmin = currentUser.role === 'admin';
+        let isStaff = currentUser.role === 'staff';
+        let isGuest = currentUser.role === 'guest';
+        
+        document.getElementById('selectFolderBtn').disabled = !(isAdmin || isStaff);
+        document.getElementById('saveToFolderBtn').disabled = !(isAdmin || isStaff);
+        document.getElementById('addStockBtn').disabled = !(isAdmin || isStaff);
+        document.getElementById('sellBtn').disabled = !(isAdmin || isStaff);
+        document.getElementById('importInboundExcelBtn').disabled = !(isAdmin || isStaff);
+        document.getElementById('importOutboundExcelBtn').disabled = !(isAdmin || isStaff);
+        document.getElementById('resetAllDataBtn').disabled = !isAdmin;
+        document.getElementById('clearAllDeletedBtn').disabled = !isAdmin;
+        
+        let deletedTab = document.getElementById('deletedTabBtn');
+        let reportsTab = document.getElementById('reportsTabBtn');
+        
+        if(deletedTab) {
+            if(isAdmin) {
+                deletedTab.classList.remove('hidden');
             } else {
-                document.querySelectorAll('#stockInForm input, #stockInForm select, #stockOutForm input').forEach(i => i.disabled = false);
-                document.getElementById('inboundPermissionMsg').innerHTML = '';
-                document.getElementById('outboundPermissionMsg').innerHTML = '';
-            }
-        }
-
-        // ============ FOLDER & AUTO-SAVE FUNCTIONS ============
-        async function selectFolder() {
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { 
-                showToast('Only Admin and Medical Staff can select database folder!', 'error');
-                return; 
-            }
-            try {
-                if (!window.showDirectoryPicker) { 
-                    showToast("Browser doesn't support folder selection. Data saved in browser storage.", 'error');
-                    return; 
+                deletedTab.classList.add('hidden');
+                if(document.getElementById('deleted').classList.contains('active')) {
+                    document.querySelector('.tab-btn[data-tab="dashboard"]').click();
                 }
-                currentFolderHandle = await window.showDirectoryPicker();
-                document.getElementById('folderPath').innerHTML = `📁 ${currentFolderHandle.name}`;
-                startAutoSave();
-                await saveToFolder();
-                showToast(`✅ Folder "${currentFolderHandle.name}" selected! Auto-save every 30 seconds.`, 'success');
-            } catch(e) { 
-                console.log('Folder selection cancelled or failed:', e);
-                showToast('⚠️ Folder selection cancelled', 'error');
             }
         }
         
-        function skipFolderSelection() { 
-            document.getElementById('folderPopup').style.display = 'none'; 
-            popupShown = true;
-            showToast('⏭️ Folder selection skipped. Data saved locally.', 'info');
+        if(reportsTab) {
+            if(isAdmin) {
+                reportsTab.classList.remove('hidden');
+            } else {
+                reportsTab.classList.add('hidden');
+                if(document.getElementById('reports').classList.contains('active')) {
+                    document.querySelector('.tab-btn[data-tab="dashboard"]').click();
+                }
+            }
         }
         
-        async function selectFolderFromPopup() { 
-            document.getElementById('folderPopup').style.display = 'none'; 
-            popupShown = true; 
-            await selectFolder(); 
+        if(isGuest) {
+            document.getElementById('inboundPermissionMsg').innerHTML = '<div class="permission-denied">⚠️ Guest Mode: View only. Login as Staff or Admin to add items.</div>';
+            document.getElementById('outboundPermissionMsg').innerHTML = '<div class="permission-denied">⚠️ Guest Mode: View only. Login as Staff or Admin to issue items.</div>';
+            document.querySelectorAll('#stockInForm input, #stockInForm select, #stockOutForm input').forEach(i => i.disabled = true);
+        } else {
+            document.querySelectorAll('#stockInForm input, #stockInForm select, #stockOutForm input').forEach(i => i.disabled = false);
+            document.getElementById('inboundPermissionMsg').innerHTML = '';
+            document.getElementById('outboundPermissionMsg').innerHTML = '';
         }
-        
-        async function saveToFolder() {
-            if (!currentFolderHandle) { 
-                showToast('⚠️ Please select a folder first!', 'error');
+    }
+
+    // ============ FOLDER & AUTO-SAVE FUNCTIONS ============
+    async function selectFolder() {
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { 
+            showToast('Only Admin and Medical Staff can select database folder!', 'error');
+            return; 
+        }
+        try {
+            if (!window.showDirectoryPicker) { 
+                showToast("Browser doesn't support folder selection. Data saved in browser storage.", 'error');
                 return; 
             }
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { 
-                showToast('Only Admin and Medical Staff can save to folder!', 'error');
-                return; 
-            }
-            
-            try {
-                let wb = XLSX.utils.book_new();
-                
-                let stockData = db.medicines.map(m => ({ 
-                    'ID': String(m.id).slice(-8), 
-                    'Medical Item': m.name, 
-                    'Category': m.category, 
-                    'Stock Quantity': m.quantity, 
-                    'Price (₹)': m.price, 
-                    'Total Value (₹)': (m.quantity * m.price).toFixed(2),
-                    'Expiry Date': m.expiryDate, 
-                    'Manufacturer': m.manufacturer || ''
-                }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockData), 'Current Stock');
-                
-                let inboundData = db.inbound.map(i => ({ 
-                    'Date': new Date(i.date).toLocaleDateString(), 
-                    'Medical Item': i.medicineName, 
-                    'Quantity': i.quantity, 
-                    'Source': i.source || 'Manual' 
-                }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inboundData), 'Inbound History');
-                
-                let outboundData = db.outbound.map(o => ({ 
-                    'Date': new Date(o.date).toLocaleDateString(), 
-                    'Medical Item': o.medicineName, 
-                    'Quantity': o.quantity, 
-                    'Total (₹)': o.total.toFixed(2), 
-                    'Issued To': o.customer || 'Medical Department'
-                }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outboundData), 'Outbound History');
-                
-                let deletedData = db.deletedItems.map(d => ({ 
-                    'Medical Item': d.name, 
-                    'Category': d.category, 
-                    'Quantity': d.quantity, 
-                    'Price (₹)': d.price, 
-                    'Deleted By': d.deletedBy, 
-                    'Deleted At': d.deletedAt 
-                }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(deletedData), 'Deleted Items');
-                
-                const fileHandle = await currentFolderHandle.getFileHandle('SpiceJet_Medical_Data.xlsx', { create: true });
-                const writable = await fileHandle.createWritable();
-                const excelData = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-                await writable.write(excelData);
-                await writable.close();
-                
-                document.getElementById('autoSaveStatus').style.background = '#4caf50';
-                document.getElementById('autoSaveStatus').innerHTML = '✅ Saved';
-                setTimeout(() => { 
-                    document.getElementById('autoSaveStatus').innerHTML = '✅ Auto-Save ON'; 
-                }, 2000);
-                
-                showToast('✅ Data saved to folder successfully!', 'success');
-                return true;
-            } catch(error) { 
-                console.error('Save error:', error);
-                showToast('❌ Failed to save to folder: ' + error.message, 'error');
-                return false;
-            }
+            currentFolderHandle = await window.showDirectoryPicker();
+            document.getElementById('folderPath').innerHTML = `📁 ${currentFolderHandle.name}`;
+            startAutoSave();
+            await saveToFolder();
+            showToast(`✅ Folder "${currentFolderHandle.name}" selected! Auto-save every 30 seconds.`, 'success');
+        } catch(e) { 
+            console.log('Folder selection cancelled or failed:', e);
+            showToast('⚠️ Folder selection cancelled', 'error');
         }
-        
-        async function autoSaveToFolder() {
-            if(!currentFolderHandle) return;
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') return;
-            try {
-                let wb = XLSX.utils.book_new();
-                let stockData = db.medicines.map(m => ({ 'Medical Item': m.name, 'Stock': m.quantity, 'Price': m.price }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockData), 'Current Stock');
-                
-                let inboundData = db.inbound.map(i => ({ 'Date': new Date(i.date).toLocaleDateString(), 'Item': i.medicineName, 'Qty': i.quantity }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inboundData), 'Inbound History');
-                
-                let outboundData = db.outbound.map(o => ({ 'Date': new Date(o.date).toLocaleDateString(), 'Item': o.medicineName, 'Qty': o.quantity, 'Total': o.total }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outboundData), 'Outbound History');
-                
-                let deletedData = db.deletedItems.map(d => ({ 'Item': d.name, 'Deleted By': d.deletedBy, 'Deleted At': d.deletedAt }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(deletedData), 'Deleted Items');
-                
-                const fileHandle = await currentFolderHandle.getFileHandle('SpiceJet_Medical_Data.xlsx', { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
-                await writable.close();
-                
-                document.getElementById('autoSaveStatus').style.background = '#4caf50';
-                document.getElementById('autoSaveStatus').innerHTML = '✅ Auto-Saved';
-                setTimeout(() => { 
-                    document.getElementById('autoSaveStatus').innerHTML = '✅ Auto-Save ON'; 
-                }, 2000);
-            } catch(e) { 
-                console.log('Auto-save failed:', e);
-            }
-        }
-        
-        function startAutoSave() { 
-            if(autoSaveTimer) clearInterval(autoSaveTimer); 
-            autoSaveTimer = setInterval(() => { 
-                autoSaveToFolder(); 
-            }, 30000); 
-        }
-
-        // ============ AUTH FUNCTIONS ============
-        function verifyAdminPassword() { 
-            let pwd = document.getElementById('adminPasswordInput').value; 
-            if(pwd === decode(ADMIN_PWD)) { 
-                currentUser = { name: 'Administrator', role: 'admin' }; 
-                closeAdminModal(); 
-                startApp(); 
-            } else { 
-                document.getElementById('loginError').innerHTML = '❌ Wrong password!'; 
-            } 
-        }
-        
-        function verifyStaffPassword() { 
-            let pwd = document.getElementById('staffPasswordInput').value, 
-                name = document.getElementById('staffNameInput').value; 
-            if(pwd === decode(STAFF_PWD) && name.trim()) { 
-                currentUser = { name: name.trim(), role: 'staff' }; 
-                closeStaffModal(); 
-                startApp(); 
-            } else { 
-                document.getElementById('loginError').innerHTML = '❌ Wrong password or name!'; 
-            } 
-        }
-        
-        function showAdminLogin() { document.getElementById('adminPasswordModal').style.display = 'flex'; }
-        function showStaffLogin() { document.getElementById('staffPasswordModal').style.display = 'flex'; }
-        function closeAdminModal() { document.getElementById('adminPasswordModal').style.display = 'none'; }
-        function closeStaffModal() { document.getElementById('staffPasswordModal').style.display = 'none'; }
-        
-        function loginAsGuest() { 
-            let name = prompt('Enter name:', 'Guest'); 
-            currentUser = { name: name || 'Guest', role: 'guest' }; 
-            startApp(); 
-        }
-        
-        function logout() { 
-            if(confirm('Logout?')) { 
-                if(refreshInterval) clearInterval(refreshInterval);
-                location.reload(); 
-            } 
-        }
-// ============================================================
-// 🔥 MISSING LOGIN FUNCTIONS - PASTE THIS
-// ============================================================
-
-function showAdminLogin() {
-    document.getElementById('adminPasswordModal').style.display = 'flex';
-    document.getElementById('adminPasswordInput').value = '';
-    document.getElementById('loginError').innerHTML = '';
-}
-
-function showStaffLogin() {
-    document.getElementById('staffPasswordModal').style.display = 'flex';
-    document.getElementById('staffNameInput').value = '';
-    document.getElementById('staffPasswordInput').value = '';
-    document.getElementById('loginError').innerHTML = '';
-}
-
-function closeAdminModal() {
-    document.getElementById('adminPasswordModal').style.display = 'none';
-}
-
-function closeStaffModal() {
-    document.getElementById('staffPasswordModal').style.display = 'none';
-}
-
-function verifyAdminPassword() {
-    const pwd = document.getElementById('adminPasswordInput').value;
-    if (pwd === 'admin123') {
-        currentUser = { name: 'Administrator', role: 'admin' };
-        closeAdminModal();
-        startApp();
-    } else {
-        document.getElementById('loginError').innerHTML = '❌ Wrong password!';
     }
-}
-
-function verifyStaffPassword() {
-    const name = document.getElementById('staffNameInput').value.trim();
-    const pwd = document.getElementById('staffPasswordInput').value;
-    if (!name) {
-        document.getElementById('loginError').innerHTML = '❌ Name is required!';
-        return;
+    
+    function skipFolderSelection() { 
+        document.getElementById('folderPopup').style.display = 'none'; 
+        popupShown = true;
+        showToast('⏭️ Folder selection skipped. Data saved locally.', 'info');
     }
-    if (pwd === 'staff123') {
-        currentUser = { name: name, role: 'staff' };
-        closeStaffModal();
-        startApp();
-    } else {
-        document.getElementById('loginError').innerHTML = '❌ Wrong password!';
+    
+    async function selectFolderFromPopup() { 
+        document.getElementById('folderPopup').style.display = 'none'; 
+        popupShown = true; 
+        await selectFolder(); 
     }
-}
-
-function loginAsGuest() {
-    const name = prompt('👤 Enter your name:', 'Guest');
-    if (name !== null) {
-        currentUser = { name: name || 'Guest', role: 'guest' };
-        startApp();
-    }
-}
-        function startApp() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            document.getElementById('userName').textContent = currentUser.name;
-            let badge = document.getElementById('userRole');
-            badge.textContent = currentUser.role.toUpperCase();
-            if(currentUser.role === 'guest') badge.classList.add('guest');
-            if(currentUser.role === 'staff') badge.classList.add('staff');
-            
-            applyPermissions();
-            
-            loadFromSupabase().then(() => {
-                updateAll();
-                updateDatalists();
-            }).catch(() => {
-                loadFromLocal();
-                updateAll();
-                updateDatalists();
-            });
-            
-            let today = new Date(), last30 = new Date(); 
-            last30.setDate(today.getDate() - 30);
-            document.getElementById('reportFromDate').value = last30.toISOString().split('T')[0];
-            document.getElementById('reportToDate').value = today.toISOString().split('T')[0];
-            document.getElementById('outboundFromDate').value = last30.toISOString().split('T')[0];
-            document.getElementById('outboundToDate').value = today.toISOString().split('T')[0];
-            generateReport(last30, today);
-            document.getElementById('expiryDaysLabel').innerText = expiryDays;
-            document.getElementById('expiryFilterDays').value = expiryDays;
-            
-            document.getElementById('searchInput').addEventListener('input', e => { currentSearch = e.target.value.toLowerCase(); applyFiltersAndSort(); });
-            document.getElementById('clearSearchBtn').addEventListener('click', () => { document.getElementById('searchInput').value = ''; currentSearch = ''; applyFiltersAndSort(); });
-            document.getElementById('categoryFilter').addEventListener('change', () => applyDashboardFilters());
-            document.getElementById('sortByFilter').addEventListener('change', () => applyDashboardFilters());
-            
-            startAutoSync();
-            
-            if((currentUser.role === 'admin' || currentUser.role === 'staff') && !popupShown) { 
-                setTimeout(() => { document.getElementById('folderPopup').style.display = 'flex'; }, 500); 
-            }
-            
-            document.getElementById('lastRefreshTime').textContent = '⏱️ Started: ' + new Date().toLocaleTimeString();
-            showToast('✅ Welcome ' + currentUser.name + '! Data loaded from Supabase.', 'success');
+    
+    async function saveToFolder() {
+        if (!currentFolderHandle) { 
+            showToast('⚠️ Please select a folder first!', 'error');
+            return; 
         }
-
-        // ============ UPDATE DATALISTS ============
-        function updateDatalists() {
-            let names = [...new Map(db.medicines.map(m => [m.name.toLowerCase(), m.name])).values()];
-            let dl1 = document.getElementById('medicineNames'), dl2 = document.getElementById('medicineNamesOutbound');
-            if(dl1) { dl1.innerHTML = ''; names.forEach(n => { let o = document.createElement('option'); o.value = n; dl1.appendChild(o); }); }
-            if(dl2) { dl2.innerHTML = ''; names.forEach(n => { let o = document.createElement('option'); o.value = n; dl2.appendChild(o); }); }
-        }
-
-        function setFilter(type) { currentFilter = type; applyDashboardFilters(); }
-        function applyDashboardFilters() {
-            categoryFilter = document.getElementById('categoryFilter').value;
-            expiryDays = parseInt(document.getElementById('expiryFilterDays').value);
-            sortBy = document.getElementById('sortByFilter').value;
-            document.getElementById('expiryDaysLabel').innerText = expiryDays;
-            applyFiltersAndSort();
-        }
-        function resetDashboardFilters() { document.getElementById('categoryFilter').value = 'all'; document.getElementById('expiryFilterDays').value = '30'; document.getElementById('sortByFilter').value = 'name'; currentFilter = 'all'; currentSearch = ''; document.getElementById('searchInput').value = ''; applyDashboardFilters(); }
-
-        function applyFiltersAndSort() {
-            let filtered = [...db.medicines];
-            let today = new Date();
-            if(currentFilter === 'lowStock') filtered = filtered.filter(m => m.quantity < 10);
-            else if(currentFilter === 'expiring') filtered = filtered.filter(m => { let days = (new Date(m.expiryDate) - today) / 86400000; return days <= expiryDays && days > 0; });
-            else if(currentFilter === 'expired') filtered = filtered.filter(m => new Date(m.expiryDate) < today);
-            if(categoryFilter && categoryFilter !== 'all') filtered = filtered.filter(m => m.category === categoryFilter);
-            if(currentSearch) filtered = filtered.filter(m => m.name.toLowerCase().includes(currentSearch) || (m.manufacturer && m.manufacturer.toLowerCase().includes(currentSearch)));
-            if(sortBy === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
-            else if(sortBy === 'stockAsc') filtered.sort((a,b) => a.quantity - b.quantity);
-            else if(sortBy === 'stockDesc') filtered.sort((a,b) => b.quantity - a.quantity);
-            else if(sortBy === 'expiryAsc') filtered.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
-            else if(sortBy === 'priceAsc') filtered.sort((a,b) => a.price - b.price);
-            displayMedicines(filtered);
-            let badge = document.getElementById('activeFilterBadge');
-            if(currentFilter !== 'all') badge.innerHTML = `<div class="active-filter-badge">🔍 Filter: ${currentFilter === 'lowStock' ? 'Low Stock' : currentFilter === 'expiring' ? `Expiring in ${expiryDays} days` : 'Expired'} <span class="remove-filter" onclick="setFilter('all')">✖️ Clear</span></div>`;
-            else badge.innerHTML = '';
-            document.getElementById('searchStats').innerHTML = `📊 ${filtered.length} of ${db.medicines.length} items`;
-        }
-
-        function displayMedicines(medicines) {
-            let tbody = document.getElementById('medicineList'); tbody.innerHTML = '';
-            let canEdit = currentUser.role === 'admin' || currentUser.role === 'staff';
-            if(!medicines.length) { tbody.innerHTML = '<tr><td colspan="9">No items</td></tr>'; return; }
-            medicines.forEach(m => {
-                let days = (new Date(m.expiryDate) - new Date()) / 86400000;
-                let status = days > 30 ? '✅ Good' : days > 0 ? '⚠️ Soon' : '❌ Expired';
-                let color = days > 30 ? 'green' : days > 0 ? 'orange' : 'red';
-                let totalVal = m.quantity * m.price;
-                let shortId = String(m.id).slice(-8);
-                tbody.innerHTML += `<tr>
-                    <td>${shortId}</td>
-                    <td><strong>${m.name}</strong><br><small>${m.manufacturer || ''}</small></td>
-                    <td>${m.category}</td>
-                    <td style="color:${m.quantity<10?'red':'green'}">${m.quantity}</td>
-                    <td>₹${m.price}</td>
-                    <td>₹${totalVal.toFixed(2)}</td>
-                    <td>${formatDate(m.expiryDate)}</td>
-                    <td style="color:${color}">${status}</td>
-                    <td>${canEdit ? `<button class="edit-btn" onclick="editItem('${m.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('${m.id}')">🗑️</button>` : ''}</td>
-                </tr>`;
-            });
-        }
-
-        function editItem(id) { 
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Only Admin and Staff can edit!', 'error'); return; }
-            let item = db.medicines.find(m => m.id === id); 
-            if(item) { 
-                window.editId = id; 
-                document.getElementById('editName').value = item.name; 
-                document.getElementById('editCategory').value = item.category; 
-                document.getElementById('editQuantity').value = item.quantity; 
-                document.getElementById('editPrice').value = item.price; 
-                document.getElementById('editExpiry').value = item.expiryDate; 
-                document.getElementById('editManufacturer').value = item.manufacturer || ''; 
-                document.getElementById('editModal').style.display = 'flex'; 
-            } 
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { 
+            showToast('Only Admin and Medical Staff can save to folder!', 'error');
+            return; 
         }
         
-        function saveEditItem() { 
-            let item = db.medicines.find(m => m.id === window.editId); 
-            if(item) { 
-                item.name = document.getElementById('editName').value; 
-                item.category = document.getElementById('editCategory').value; 
-                item.quantity = parseInt(document.getElementById('editQuantity').value); 
-                item.price = parseFloat(document.getElementById('editPrice').value); 
-                item.expiryDate = document.getElementById('editExpiry').value; 
-                item.manufacturer = document.getElementById('editManufacturer').value; 
-                updateAll(); 
-                closeEditModal(); 
-                showToast('✅ Item updated successfully!', 'success');
-            } 
-        }
-        
-        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
-
-        function deleteItem(id) {
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Only Admin and Staff can delete!', 'error'); return; }
-            let item = db.medicines.find(m => m.id === id);
-            if(item && confirm(`Delete "${item.name}"? It will be moved to Deleted Items.`)) {
-                db.deletedItems.unshift({ 
-                    id: generateUniqueId(),
-                    originalId: id, 
-                    name: item.name, 
-                    category: item.category, 
-                    quantity: item.quantity, 
-                    price: item.price, 
-                    expiryDate: item.expiryDate, 
-                    manufacturer: item.manufacturer, 
-                    deletedBy: currentUser.name + ' (' + currentUser.role + ')', 
-                    deletedAt: getDateTime() 
-                });
-                db.medicines = db.medicines.filter(m => m.id !== id);
-                updateAll(); 
-                showToast(`✅ "${item.name}" moved to Deleted Items`, 'success');
-            }
-        }
-        
-        function restoreItem(delId) { 
-            if(currentUser.role !== 'admin') { showToast('Only Admin can restore items!', 'error'); return; }
-            let del = db.deletedItems.find(d => d.id === delId); 
-            if(del) { 
-                db.medicines.push({ 
-                    id: del.originalId || generateUniqueId(), 
-                    name: del.name, 
-                    category: del.category, 
-                    quantity: del.quantity, 
-                    price: del.price, 
-                    expiryDate: del.expiryDate, 
-                    manufacturer: del.manufacturer, 
-                    addedDate: new Date().toISOString() 
-                }); 
-                db.deletedItems = db.deletedItems.filter(d => d.id !== delId); 
-                updateAll(); 
-                showToast('✅ Item restored successfully!', 'success');
-            } 
-        }
-        
-        function clearAllDeleted() { 
-            if(currentUser.role !== 'admin') { showToast('Admin only!', 'error'); return; } 
-            if(confirm('Permanently delete all deleted records?')) { 
-                db.deletedItems = []; 
-                updateAll(); 
-                showToast('🗑️ All deleted records cleared', 'info');
-            } 
-        }
-
-        function loadDeletedTable() { 
-            if(currentUser.role !== 'admin') return;
-            let tbody = document.getElementById('deletedList'); 
-            if(!tbody) return; 
-            tbody.innerHTML = ''; 
-            if(!db.deletedItems.length) { 
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">No deleted items</td></tr>'; 
-                return; 
-            } 
-            db.deletedItems.forEach(d => { 
-                tbody.innerHTML += `<tr>
-                    <td>${d.name}</td>
-                    <td>${d.category}</td>
-                    <td>${d.quantity}</td>
-                    <td>₹${d.price}</td>
-                    <td>${d.deletedBy}</td>
-                    <td>${d.deletedAt}</td>
-                    <td><button class="restore-btn" onclick="restoreItem('${d.id}')">↩️ Restore</button></td>
-                </tr>`; 
-            }); 
-        }
-
-        function filterOutboundHistory() {
-            let from = document.getElementById('outboundFromDate').value, to = document.getElementById('outboundToDate').value, search = document.getElementById('outboundSearch').value.toLowerCase();
-            let filtered = [...db.outbound];
-            if(from) { let fd = new Date(from); fd.setHours(0,0,0,0); filtered = filtered.filter(o => new Date(o.date) >= fd); }
-            if(to) { let td = new Date(to); td.setHours(23,59,59,999); filtered = filtered.filter(o => new Date(o.date) <= td); }
-            if(search) filtered = filtered.filter(o => (o.customer || '').toLowerCase().includes(search));
-            filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
-            let tbody = document.getElementById('outboundList'); tbody.innerHTML = '';
-            if(!filtered.length) { tbody.innerHTML = '<tr><td colspan="6">No records</td></tr>'; return; }
-            filtered.slice(0, 100).forEach(o => { tbody.innerHTML += `<tr>
-                <td>${new Date(o.date).toLocaleDateString()}</td>
-                <td>${o.medicineName}</td>
-                <td>${o.quantity}</td>
-                <td>₹${o.total.toFixed(2)}</td>
-                <td>${o.customer || 'Medical'}</td>
-                <td>${o.source || 'Manual'}</td>
-            </tr>`; });
-        }
-        function resetOutboundFilters() { let t = new Date(), l = new Date(); l.setDate(t.getDate() - 30); document.getElementById('outboundFromDate').value = l.toISOString().split('T')[0]; document.getElementById('outboundToDate').value = t.toISOString().split('T')[0]; document.getElementById('outboundSearch').value = ''; filterOutboundHistory(); }
-
-        function setPeriod(period) {
-            let today = new Date(), start = new Date(), end = new Date();
-            if(period === 'today') { start = new Date(); end = new Date(); }
-            else if(period === 'thisWeek') { start.setDate(today.getDate() - today.getDay()); end = new Date(); }
-            else if(period === 'thisMonth') { start.setDate(1); end = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
-            else if(period === 'lastMonth') { start = new Date(today.getFullYear(), today.getMonth() - 1, 1); end = new Date(today.getFullYear(), today.getMonth(), 0); }
-            else if(period === 'thisQuarter') { let q = Math.floor(today.getMonth() / 3); start = new Date(today.getFullYear(), q * 3, 1); end = new Date(today.getFullYear(), q * 3 + 3, 0); }
-            else if(period === 'thisYear') { start = new Date(today.getFullYear(), 0, 1); end = new Date(today.getFullYear(), 11, 31); }
-            document.getElementById('reportFromDate').value = start.toISOString().split('T')[0];
-            document.getElementById('reportToDate').value = end.toISOString().split('T')[0];
-            generateReport(start, end);
-        }
-        
-        function applyCustomDateRange() { let from = new Date(document.getElementById('reportFromDate').value), to = new Date(document.getElementById('reportToDate').value); if(from && to && from <= to) generateReport(from, to); else showToast('Invalid dates', 'error'); }
-        
-        function generateReport(start, end) {
-            if(currentUser.role !== 'admin') return;
-            reportStartDate = start; reportEndDate = end;
-            let inboundFiltered = db.inbound.filter(i => { let d = new Date(i.date); return d >= start && d <= end; });
-            let outboundFiltered = db.outbound.filter(o => { let d = new Date(o.date); return d >= start && d <= end; });
-            let inQty = inboundFiltered.reduce((s,i) => s + i.quantity, 0);
-            let inVal = inboundFiltered.reduce((s,i) => s + (i.quantity * (db.medicines.find(m => m.name === i.medicineName)?.price || 0)), 0);
-            let outQty = outboundFiltered.reduce((s,o) => s + o.quantity, 0);
-            let outVal = outboundFiltered.reduce((s,o) => s + o.total, 0);
-            document.getElementById('summaryInboundQty').innerHTML = inQty; document.getElementById('summaryInboundVal').innerHTML = `₹${inVal.toFixed(2)}`;
-            document.getElementById('summaryOutboundQty').innerHTML = outQty; document.getElementById('summaryOutboundVal').innerHTML = `₹${outVal.toFixed(2)}`;
-            document.getElementById('summaryNetQty').innerHTML = inQty - outQty; document.getElementById('summaryNetVal').innerHTML = `₹${(inVal - outVal).toFixed(2)}`;
-            document.getElementById('avgIssueVal').innerHTML = outboundFiltered.length ? `₹${(outVal / outboundFiltered.length).toFixed(2)}` : '₹0';
-            let reportData = [];
-            inboundFiltered.forEach(i => reportData.push({ date: new Date(i.date), type: 'INBOUND', item: i.medicineName, qty: i.quantity, val: i.quantity * (db.medicines.find(m => m.name === i.medicineName)?.price || 0), source: i.source || 'Manual' }));
-            outboundFiltered.forEach(o => reportData.push({ date: new Date(o.date), type: 'OUTBOUND', item: o.medicineName, qty: o.quantity, val: o.total, source: o.customer || 'Medical' }));
-            reportData.sort((a,b) => b.date - a.date);
-            let tbody = document.getElementById('reportBody'); tbody.innerHTML = '';
-            reportData.forEach(r => { tbody.innerHTML += `<tr>
-                <td>${formatDate(r.date)}</td>
-                <td style="color:${r.type === 'INBOUND' ? 'green' : 'red'}">${r.type}</td>
-                <td>${r.item}</td>
-                <td>${r.qty}</td>
-                <td>₹${r.val.toFixed(2)}</td>
-                <td>${r.source}</td>
-            </tr>`; });
-            if(!reportData.length) tbody.innerHTML = '<tr><td colspan="6">No transactions</td></tr>';
-        }
-
-        // ============ EXCEL EXPORT FUNCTIONS ============
-        function exportAllToExcel() {
-            if(currentUser.role !== 'admin') { showToast('Only Admin can export complete report!', 'error'); return; }
+        try {
             let wb = XLSX.utils.book_new();
-            let stockData = db.medicines.map(m => ({ 'ID': String(m.id).slice(-8), 'Medical Item': m.name, 'Category': m.category, 'Stock': m.quantity, 'Price': m.price, 'Expiry': m.expiryDate }));
+            
+            let stockData = db.medicines.map(m => ({ 
+                'ID': String(m.id).slice(-8), 
+                'Medical Item': m.name, 
+                'Category': m.category, 
+                'Stock Quantity': m.quantity, 
+                'Price (₹)': m.price, 
+                'Total Value (₹)': (m.quantity * m.price).toFixed(2),
+                'Expiry Date': m.expiryDate, 
+                'Manufacturer': m.manufacturer || ''
+            }));
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockData), 'Current Stock');
+            
+            let inboundData = db.inbound.map(i => ({ 
+                'Date': new Date(i.date).toLocaleDateString(), 
+                'Medical Item': i.medicineName, 
+                'Quantity': i.quantity, 
+                'Source': i.source || 'Manual' 
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inboundData), 'Inbound History');
+            
+            let outboundData = db.outbound.map(o => ({ 
+                'Date': new Date(o.date).toLocaleDateString(), 
+                'Medical Item': o.medicineName, 
+                'Quantity': o.quantity, 
+                'Total (₹)': o.total.toFixed(2), 
+                'Issued To': o.customer || 'Medical Department'
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outboundData), 'Outbound History');
+            
+            let deletedData = db.deletedItems.map(d => ({ 
+                'Medical Item': d.name, 
+                'Category': d.category, 
+                'Quantity': d.quantity, 
+                'Price (₹)': d.price, 
+                'Deleted By': d.deletedBy, 
+                'Deleted At': d.deletedAt 
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(deletedData), 'Deleted Items');
+            
+            const fileHandle = await currentFolderHandle.getFileHandle('SpiceJet_Medical_Data.xlsx', { create: true });
+            const writable = await fileHandle.createWritable();
+            const excelData = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+            await writable.write(excelData);
+            await writable.close();
+            
+            document.getElementById('autoSaveStatus').style.background = '#4caf50';
+            document.getElementById('autoSaveStatus').innerHTML = '✅ Saved';
+            setTimeout(() => { 
+                document.getElementById('autoSaveStatus').innerHTML = '✅ Auto-Save ON'; 
+            }, 2000);
+            
+            showToast('✅ Data saved to folder successfully!', 'success');
+            return true;
+        } catch(error) { 
+            console.error('Save error:', error);
+            showToast('❌ Failed to save to folder: ' + error.message, 'error');
+            return false;
+        }
+    }
+    
+    async function autoSaveToFolder() {
+        if(!currentFolderHandle) return;
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') return;
+        try {
+            let wb = XLSX.utils.book_new();
+            let stockData = db.medicines.map(m => ({ 'Medical Item': m.name, 'Stock': m.quantity, 'Price': m.price }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockData), 'Current Stock');
+            
             let inboundData = db.inbound.map(i => ({ 'Date': new Date(i.date).toLocaleDateString(), 'Item': i.medicineName, 'Qty': i.quantity }));
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inboundData), 'Inbound History');
+            
             let outboundData = db.outbound.map(o => ({ 'Date': new Date(o.date).toLocaleDateString(), 'Item': o.medicineName, 'Qty': o.quantity, 'Total': o.total }));
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outboundData), 'Outbound History');
+            
             let deletedData = db.deletedItems.map(d => ({ 'Item': d.name, 'Deleted By': d.deletedBy, 'Deleted At': d.deletedAt }));
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(deletedData), 'Deleted Items');
-            XLSX.writeFile(wb, `SpiceJet_Complete_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-            showToast('✅ Excel file with 4 sheets downloaded!', 'success');
+            
+            const fileHandle = await currentFolderHandle.getFileHandle('SpiceJet_Medical_Data.xlsx', { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
+            await writable.close();
+            
+            document.getElementById('autoSaveStatus').style.background = '#4caf50';
+            document.getElementById('autoSaveStatus').innerHTML = '✅ Auto-Saved';
+            setTimeout(() => { 
+                document.getElementById('autoSaveStatus').innerHTML = '✅ Auto-Save ON'; 
+            }, 2000);
+        } catch(e) { 
+            console.log('Auto-save failed:', e);
         }
-        
-        function exportStockToExcel() { 
-            let ws = XLSX.utils.json_to_sheet(db.medicines.map(m => ({ 'Medical Item': m.name, Category: m.category, Stock: m.quantity, Price: m.price, 'Expiry Date': m.expiryDate }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Stock'); 
-            XLSX.writeFile(wb, `SpiceJet_Stock_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Stock exported!', 'success');
-        }
-        
-        function exportLowStockToExcel() { 
-            let f = db.medicines.filter(m => m.quantity < 10); 
-            if(!f.length) { showToast('No low stock items', 'info'); return; } 
-            let ws = XLSX.utils.json_to_sheet(f.map(m => ({ 'Medical Item': m.name, Stock: m.quantity, Category: m.category, 'Expiry Date': m.expiryDate }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Low Stock'); 
-            XLSX.writeFile(wb, `SpiceJet_Low_Stock_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Low stock exported!', 'success');
-        }
-        
-        function exportExpiringToExcel() { 
-            let today = new Date(); 
-            let f = db.medicines.filter(m => { let d = (new Date(m.expiryDate) - today) / 86400000; return d <= expiryDays && d > 0; }); 
-            if(!f.length) { showToast('No expiring items', 'info'); return; } 
-            let ws = XLSX.utils.json_to_sheet(f.map(m => ({ 'Medical Item': m.name, 'Expiry Date': m.expiryDate, 'Days Left': Math.ceil((new Date(m.expiryDate) - today) / 86400000), Stock: m.quantity }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Expiring Items'); 
-            XLSX.writeFile(wb, `SpiceJet_Expiring_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Expiring items exported!', 'success');
-        }
-        
-        function exportExpiredToExcel() { 
-            let f = db.medicines.filter(m => new Date(m.expiryDate) < new Date()); 
-            if(!f.length) { showToast('No expired items', 'info'); return; } 
-            let ws = XLSX.utils.json_to_sheet(f.map(m => ({ 'Medical Item': m.name, 'Expiry Date': m.expiryDate, Stock: m.quantity }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Expired Items'); 
-            XLSX.writeFile(wb, `SpiceJet_Expired_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Expired items exported!', 'success');
-        }
-        
-        function exportInboundToExcel() { 
-            let ws = XLSX.utils.json_to_sheet(db.inbound.map(i => ({ Date: new Date(i.date).toLocaleDateString(), 'Medical Item': i.medicineName, Quantity: i.quantity, Source: i.source || 'Manual' }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Inbound History'); 
-            XLSX.writeFile(wb, `SpiceJet_Inbound_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Inbound history exported!', 'success');
-        }
-        
-        function exportOutboundToExcel() { 
-            let ws = XLSX.utils.json_to_sheet(db.outbound.map(o => ({ Date: new Date(o.date).toLocaleDateString(), 'Medical Item': o.medicineName, Quantity: o.quantity, 'Total (₹)': o.total.toFixed(2), 'Issued To': o.customer || 'Medical Department' }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Outbound History'); 
-            XLSX.writeFile(wb, `SpiceJet_Outbound_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Outbound history exported!', 'success');
-        }
-        
-        function exportDeletedToExcel() { 
-            if(currentUser.role !== 'admin') { showToast('Only Admin can export deleted items!', 'error'); return; }
-            let ws = XLSX.utils.json_to_sheet(db.deletedItems.map(d => ({ 'Medical Item': d.name, Category: d.category, Quantity: d.quantity, 'Price (₹)': d.price, 'Deleted By': d.deletedBy, 'Deleted At': d.deletedAt }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Deleted Items'); 
-            XLSX.writeFile(wb, `SpiceJet_Deleted_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Deleted items exported!', 'success');
-        }
-        
-        function exportPeriodReport() { 
-            if(currentUser.role !== 'admin') { showToast('Only Admin can export period report!', 'error'); return; }
-            if(!reportStartDate) { showToast('Select date range first', 'error'); return; } 
-            let inboundFiltered = db.inbound.filter(i => new Date(i.date) >= reportStartDate && new Date(i.date) <= reportEndDate); 
-            let outboundFiltered = db.outbound.filter(o => new Date(o.date) >= reportStartDate && new Date(o.date) <= reportEndDate); 
-            let data = []; 
-            inboundFiltered.forEach(i => data.push({ Date: new Date(i.date).toLocaleDateString(), Type: 'INBOUND', 'Medical Item': i.medicineName, Quantity: i.quantity, 'Value (₹)': (i.quantity * (db.medicines.find(m => m.name === i.medicineName)?.price || 0)).toFixed(2), Source: i.source || 'Manual' })); 
-            outboundFiltered.forEach(o => data.push({ Date: new Date(o.date).toLocaleDateString(), Type: 'OUTBOUND', 'Medical Item': o.medicineName, Quantity: o.quantity, 'Value (₹)': o.total.toFixed(2), Source: o.customer || 'Medical Department' })); 
-            data.sort((a,b) => new Date(b.Date) - new Date(a.Date)); 
-            let ws = XLSX.utils.json_to_sheet(data); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Period Report'); 
-            XLSX.writeFile(wb, `SpiceJet_Period_Report_${reportStartDate.toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Period report exported!', 'success');
-        }
-        
-        function exportInboundDetail() { 
-            if(currentUser.role !== 'admin') { showToast('Only Admin can export inbound detail!', 'error'); return; }
-            let f = db.inbound.filter(i => new Date(i.date) >= reportStartDate && new Date(i.date) <= reportEndDate); 
-            if(!f.length) { showToast('No inbound data in selected period', 'info'); return; } 
-            let ws = XLSX.utils.json_to_sheet(f.map(i => ({ Date: new Date(i.date).toLocaleDateString(), 'Medical Item': i.medicineName, Quantity: i.quantity, Source: i.source || 'Manual' }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Inbound Detail'); 
-            XLSX.writeFile(wb, `SpiceJet_Inbound_Detail_${reportStartDate.toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Inbound detail exported!', 'success');
-        }
-        
-        function exportOutboundDetail() { 
-            if(currentUser.role !== 'admin') { showToast('Only Admin can export outbound detail!', 'error'); return; }
-            let f = db.outbound.filter(o => new Date(o.date) >= reportStartDate && new Date(o.date) <= reportEndDate); 
-            if(!f.length) { showToast('No outbound data in selected period', 'info'); return; } 
-            let ws = XLSX.utils.json_to_sheet(f.map(o => ({ Date: new Date(o.date).toLocaleDateString(), 'Medical Item': o.medicineName, Quantity: o.quantity, 'Total (₹)': o.total.toFixed(2), 'Issued To': o.customer || 'Medical Department' }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, 'Outbound Detail'); 
-            XLSX.writeFile(wb, `SpiceJet_Outbound_Detail_${reportStartDate.toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Outbound detail exported!', 'success');
-        }
-        
-        function exportFullBackup() { 
-            if(currentUser.role !== 'admin') { showToast('Only Admin can export backup!', 'error'); return; }
-            let blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'}); 
-            let a = document.createElement('a'); 
-            a.href = URL.createObjectURL(blob); 
-            a.download = `SpiceJet_Backup_${new Date().toISOString().split('T')[0]}.json`; 
-            a.click(); 
-            showToast('✅ Full backup exported!', 'success');
-        }
-        
-        function resetAllData() { 
-            if(currentUser.role !== 'admin') { showToast('Admin only!', 'error'); return; } 
-            if(confirm('⚠️ DELETE ALL DATA?')) { 
-                if(prompt('Type "DELETE" to confirm') === 'DELETE') { 
-                    db = { medicines: [], inbound: [], outbound: [], deletedItems: [], config: {} }; 
-                    updateAll(); 
-                    showToast('✅ All data reset!', 'success');
-                } 
-            } 
-        }
-        
-        function downloadInboundTemplate() { 
-            if(currentUser.role === 'guest') { showToast('Guest cannot download template!', 'error'); return; }
-            let ws = XLSX.utils.json_to_sheet([{ MedicalItem: "Paracetamol 500mg", Category: "Tablet", Quantity: 100, Price: 25, ExpiryDate: "2025-12-31", Supplier: "Cipla" }]); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, "Medical Stock Template"); 
-            XLSX.writeFile(wb, "SpiceJet_Medical_Stock_Template.xlsx"); 
-            showToast('✅ Template downloaded!', 'success');
-        }
-        
-        function importInboundExcel(file) {
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Only Admin and Staff can import!', 'error'); return; }
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                let workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                let addedCount = 0, updatedCount = 0;
-                rows.forEach(row => {
-                    let medName = row.MedicalItem || row.name || row.Medicine;
-                    if (medName) {
-                        let medicine = {
-                            id: generateUniqueId(),
-                            name: medName,
-                            category: row.Category || row.category || 'Tablet',
-                            quantity: parseInt(row.Quantity || row.quantity || 0),
-                            price: parseFloat(row.Price || row.price || 0),
-                            expiryDate: row.ExpiryDate || row.expiryDate || '',
-                            manufacturer: row.Supplier || row.manufacturer || 'Unknown',
-                            addedDate: new Date().toISOString()
-                        };
-                        if (medicine.name && medicine.quantity > 0) {
-                            let existing = db.medicines.find(m => m.name.toLowerCase() === medicine.name.toLowerCase() && m.expiryDate === medicine.expiryDate);
-                            if (existing) { existing.quantity += medicine.quantity; updatedCount++; }
-                            else { db.medicines.push(medicine); addedCount++; }
-                            db.inbound.unshift({ id: generateUniqueId(), date: new Date().toISOString(), medicineName: medicine.name, quantity: medicine.quantity, source: 'Excel Import' });
-                        }
-                    }
-                });
-                updateAll();
-                showToast(`✅ Imported ${addedCount} new, Updated ${updatedCount} existing.`, 'success');
-            };
-            reader.readAsArrayBuffer(file);
-        }
-        
-        function exportCurrentStock() { 
-            let ws = XLSX.utils.json_to_sheet(db.medicines.map(m => ({ 'Medical Item': m.name, Category: m.category, 'Current Stock': m.quantity, 'Price (₹)': m.price, 'Expiry Date': m.expiryDate, Supplier: m.manufacturer }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, "Current Medical Stock"); 
-            XLSX.writeFile(wb, `SpiceJet_Medical_Stock_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Stock exported!', 'success');
-        }
-        
-        function downloadOutboundTemplate() { 
-            if(currentUser.role === 'guest') { showToast('Guest cannot download template!', 'error'); return; }
-            let ws = XLSX.utils.json_to_sheet([{ MedicalItem: "Paracetamol 500mg", Quantity: 5, IssuedTo: "Captain Rajesh", IssueDate: new Date().toISOString().split('T')[0] }]); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, "Issue Template"); 
-            XLSX.writeFile(wb, "SpiceJet_Medical_Issue_Template.xlsx"); 
-            showToast('✅ Template downloaded!', 'success');
-        }
-        
-        function importOutboundExcel(file) {
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Only Admin and Staff can import!', 'error'); return; }
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                let workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                let issuedCount = 0, failedCount = 0;
-                rows.forEach(row => {
-                    let medName = row.MedicalItem || row.name || row.Medicine;
-                    let quantity = parseInt(row.Quantity || row.quantity || 0);
-                    let issuedTo = row.IssuedTo || row.customer || 'Medical Department';
-                    if (medName && quantity > 0) {
-                        let medicine = db.medicines.find(m => m.name.toLowerCase() === medName.toLowerCase());
-                        if (medicine && medicine.quantity >= quantity) {
-                            medicine.quantity -= quantity;
-                            db.outbound.unshift({ id: generateUniqueId(), date: new Date().toISOString(), medicineName: medicine.name, quantity: quantity, total: quantity * medicine.price, customer: issuedTo, source: 'Excel Import' });
-                            issuedCount++;
-                        } else { failedCount++; }
-                    }
-                });
-                updateAll();
-                showToast(`✅ Processed ${issuedCount} issues! ${failedCount > 0 ? `Failed: ${failedCount}` : ''}`, 'success');
-            };
-            reader.readAsArrayBuffer(file);
-        }
-        
-        function exportSalesReport() { 
-            let ws = XLSX.utils.json_to_sheet(db.outbound.map(s => ({ 'Date': new Date(s.date).toLocaleDateString(), 'Medical Item': s.medicineName, 'Quantity': s.quantity, 'Total (₹)': s.total, 'Issued To': s.customer || 'Medical Department' }))); 
-            let wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, "Issued Report"); 
-            XLSX.writeFile(wb, `SpiceJet_Issued_Report_${new Date().toISOString().split('T')[0]}.xlsx`); 
-            showToast('✅ Report exported!', 'success');
-        }
+    }
+    
+    function startAutoSave() { 
+        if(autoSaveTimer) clearInterval(autoSaveTimer); 
+        autoSaveTimer = setInterval(() => { 
+            autoSaveToFolder(); 
+        }, 30000); 
+    }
 
-        // ============ UPDATE ALL FUNCTION ============
-        function updateAll() {
-            document.getElementById('totalMedicines').innerHTML = db.medicines.length;
-            document.getElementById('lowStock').innerHTML = db.medicines.filter(m => m.quantity < 10).length;
-            let today = new Date();
-            document.getElementById('expiringSoon').innerHTML = db.medicines.filter(m => { let d = (new Date(m.expiryDate) - today) / 86400000; return d <= 30 && d > 0; }).length;
-            document.getElementById('expiredItems').innerHTML = db.medicines.filter(m => new Date(m.expiryDate) < today).length;
-            document.getElementById('totalValue').innerHTML = `₹${db.medicines.reduce((s,m) => s + (m.quantity * m.price), 0).toFixed(2)}`;
-            
-            let inboundTbody = document.getElementById('inboundList'); 
-            inboundTbody.innerHTML = ''; 
-            [...db.inbound].reverse().slice(0, 50).forEach(i => { 
-                inboundTbody.innerHTML += `<tr>
-                    <td>${new Date(i.date).toLocaleDateString()}</td>
-                    <td>${i.medicineName}</td>
-                    <td>${i.quantity}</td>
-                    <td>${i.source || 'Manual'}</td>
-                </tr>`; 
-            });
-            
-            filterOutboundHistory();
-            
-            let alertDiv = document.getElementById('expiryAlertList'); 
-            alertDiv.innerHTML = ''; 
-            let expiring = db.medicines.filter(m => { let d = (new Date(m.expiryDate) - today) / 86400000; return d <= 30 && d > 0; }); 
-            if(!expiring.length) alertDiv.innerHTML = '<div style="background:#d4edda;padding:15px;border-radius:5px;">✅ No expiring items</div>'; 
-            else expiring.forEach(m => { 
-                let days = Math.ceil((new Date(m.expiryDate) - today) / 86400000); 
-                alertDiv.innerHTML += `<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin-bottom:10px;border-radius:5px;">
-                    <strong>⚠️ ${m.name}</strong><br>Stock: ${m.quantity} | Expires: ${formatDate(m.expiryDate)} | ${days} days left
-                </div>`; 
-            });
-            
-            if(currentUser.role === 'admin') loadDeletedTable(); 
-            updateDatalists(); 
-            saveToLocal(); 
-            applyFiltersAndSort(); 
-            
-            if(currentUser.role === 'admin') generateReport(reportStartDate || new Date(new Date().setDate(new Date().getDate() - 30)), reportEndDate || new Date());
-            if(currentFolderHandle) autoSaveToFolder();
-            
-            // 🔥 Save to Supabase (async)
-            saveToSupabase().then(() => {
-                console.log('✅ Supabase sync completed');
-            }).catch(e => {
-                console.warn('⚠️ Supabase sync failed:', e);
-            });
-        }
+    // ============ AUTH FUNCTIONS ============
+    function logout() { 
+        if(confirm('Logout?')) { 
+            if(refreshInterval) clearInterval(refreshInterval);
+            location.reload(); 
+        } 
+    }
 
-        // ============ EVENT LISTENERS ============
-        document.getElementById('inboundExcelFile').addEventListener('change', e => { if(e.target.files[0]) importInboundExcel(e.target.files[0]); });
-        document.getElementById('outboundExcelFile').addEventListener('change', e => { if(e.target.files[0]) importOutboundExcel(e.target.files[0]); });
-        document.getElementById('downloadInboundTemplateBtn').addEventListener('click', downloadInboundTemplate);
-        document.getElementById('importInboundExcelBtn').addEventListener('click', () => document.getElementById('inboundExcelFile').click());
-        document.getElementById('exportCurrentStockBtn').addEventListener('click', exportCurrentStock);
-        document.getElementById('downloadOutboundTemplateBtn').addEventListener('click', downloadOutboundTemplate);
-        document.getElementById('importOutboundExcelBtn').addEventListener('click', () => document.getElementById('outboundExcelFile').click());
-        document.getElementById('exportSalesReportBtn').addEventListener('click', exportSalesReport);
+    function startApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('userName').textContent = currentUser.name;
+        let badge = document.getElementById('userRole');
+        badge.textContent = currentUser.role.toUpperCase();
+        if(currentUser.role === 'guest') badge.classList.add('guest');
+        if(currentUser.role === 'staff') badge.classList.add('staff');
         
-        document.getElementById('stockInForm').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Permission denied', 'error'); return; } 
-            let med = { 
-                id: generateUniqueId(), 
-                name: document.getElementById('medName').value, 
-                category: document.getElementById('medCategory').value, 
-                quantity: parseInt(document.getElementById('medQuantity').value), 
-                price: parseFloat(document.getElementById('medPrice').value), 
-                expiryDate: document.getElementById('medExpiry').value, 
-                manufacturer: document.getElementById('medManufacturer').value || 'Unknown', 
+        applyPermissions();
+        
+        loadFromSupabase().then(() => {
+            updateAll();
+            updateDatalists();
+        }).catch(() => {
+            loadFromLocal();
+            updateAll();
+            updateDatalists();
+        });
+        
+        let today = new Date(), last30 = new Date(); 
+        last30.setDate(today.getDate() - 30);
+        document.getElementById('reportFromDate').value = last30.toISOString().split('T')[0];
+        document.getElementById('reportToDate').value = today.toISOString().split('T')[0];
+        document.getElementById('outboundFromDate').value = last30.toISOString().split('T')[0];
+        document.getElementById('outboundToDate').value = today.toISOString().split('T')[0];
+        generateReport(last30, today);
+        document.getElementById('expiryDaysLabel').innerText = expiryDays;
+        document.getElementById('expiryFilterDays').value = expiryDays;
+        
+        document.getElementById('searchInput').addEventListener('input', e => { currentSearch = e.target.value.toLowerCase(); applyFiltersAndSort(); });
+        document.getElementById('clearSearchBtn').addEventListener('click', () => { document.getElementById('searchInput').value = ''; currentSearch = ''; applyFiltersAndSort(); });
+        document.getElementById('categoryFilter').addEventListener('change', () => applyDashboardFilters());
+        document.getElementById('sortByFilter').addEventListener('change', () => applyDashboardFilters());
+        
+        startAutoSync();
+        
+        if((currentUser.role === 'admin' || currentUser.role === 'staff') && !popupShown) { 
+            setTimeout(() => { document.getElementById('folderPopup').style.display = 'flex'; }, 500); 
+        }
+        
+        document.getElementById('lastRefreshTime').textContent = '⏱️ Started: ' + new Date().toLocaleTimeString();
+        showToast('✅ Welcome ' + currentUser.name + '! Data loaded from Supabase.', 'success');
+    }
+
+    // ============ UPDATE DATALISTS ============
+    function updateDatalists() {
+        let names = [...new Map(db.medicines.map(m => [m.name.toLowerCase(), m.name])).values()];
+        let dl1 = document.getElementById('medicineNames'), dl2 = document.getElementById('medicineNamesOutbound');
+        if(dl1) { dl1.innerHTML = ''; names.forEach(n => { let o = document.createElement('option'); o.value = n; dl1.appendChild(o); }); }
+        if(dl2) { dl2.innerHTML = ''; names.forEach(n => { let o = document.createElement('option'); o.value = n; dl2.appendChild(o); }); }
+    }
+
+    function setFilter(type) { currentFilter = type; applyDashboardFilters(); }
+    function applyDashboardFilters() {
+        categoryFilter = document.getElementById('categoryFilter').value;
+        expiryDays = parseInt(document.getElementById('expiryFilterDays').value);
+        sortBy = document.getElementById('sortByFilter').value;
+        document.getElementById('expiryDaysLabel').innerText = expiryDays;
+        applyFiltersAndSort();
+    }
+    function resetDashboardFilters() { document.getElementById('categoryFilter').value = 'all'; document.getElementById('expiryFilterDays').value = '30'; document.getElementById('sortByFilter').value = 'name'; currentFilter = 'all'; currentSearch = ''; document.getElementById('searchInput').value = ''; applyDashboardFilters(); }
+
+    function applyFiltersAndSort() {
+        let filtered = [...db.medicines];
+        let today = new Date();
+        if(currentFilter === 'lowStock') filtered = filtered.filter(m => m.quantity < 10);
+        else if(currentFilter === 'expiring') filtered = filtered.filter(m => { let days = (new Date(m.expiryDate) - today) / 86400000; return days <= expiryDays && days > 0; });
+        else if(currentFilter === 'expired') filtered = filtered.filter(m => new Date(m.expiryDate) < today);
+        if(categoryFilter && categoryFilter !== 'all') filtered = filtered.filter(m => m.category === categoryFilter);
+        if(currentSearch) filtered = filtered.filter(m => m.name.toLowerCase().includes(currentSearch) || (m.manufacturer && m.manufacturer.toLowerCase().includes(currentSearch)));
+        if(sortBy === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+        else if(sortBy === 'stockAsc') filtered.sort((a,b) => a.quantity - b.quantity);
+        else if(sortBy === 'stockDesc') filtered.sort((a,b) => b.quantity - a.quantity);
+        else if(sortBy === 'expiryAsc') filtered.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+        else if(sortBy === 'priceAsc') filtered.sort((a,b) => a.price - b.price);
+        displayMedicines(filtered);
+        let badge = document.getElementById('activeFilterBadge');
+        if(currentFilter !== 'all') badge.innerHTML = `<div class="active-filter-badge">🔍 Filter: ${currentFilter === 'lowStock' ? 'Low Stock' : currentFilter === 'expiring' ? `Expiring in ${expiryDays} days` : 'Expired'} <span class="remove-filter" onclick="setFilter('all')">✖️ Clear</span></div>`;
+        else badge.innerHTML = '';
+        document.getElementById('searchStats').innerHTML = `📊 ${filtered.length} of ${db.medicines.length} items`;
+    }
+
+    function displayMedicines(medicines) {
+        let tbody = document.getElementById('medicineList'); tbody.innerHTML = '';
+        let canEdit = currentUser.role === 'admin' || currentUser.role === 'staff';
+        if(!medicines.length) { tbody.innerHTML = '<tr><td colspan="9">No items</td></tr>'; return; }
+        medicines.forEach(m => {
+            let days = (new Date(m.expiryDate) - new Date()) / 86400000;
+            let status = days > 30 ? '✅ Good' : days > 0 ? '⚠️ Soon' : '❌ Expired';
+            let color = days > 30 ? 'green' : days > 0 ? 'orange' : 'red';
+            let totalVal = m.quantity * m.price;
+            let shortId = String(m.id).slice(-8);
+            tbody.innerHTML += `<tr>
+                <td>${shortId}</td>
+                <td><strong>${m.name}</strong><br><small>${m.manufacturer || ''}</small></td>
+                <td>${m.category}</td>
+                <td style="color:${m.quantity<10?'red':'green'}">${m.quantity}</td>
+                <td>₹${m.price}</td>
+                <td>₹${totalVal.toFixed(2)}</td>
+                <td>${formatDate(m.expiryDate)}</td>
+                <td style="color:${color}">${status}</td>
+                <td>${canEdit ? `<button class="edit-btn" onclick="editItem('${m.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('${m.id}')">🗑️</button>` : ''}</td>
+            </tr>`;
+        });
+    }
+
+    function editItem(id) { 
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Only Admin and Staff can edit!', 'error'); return; }
+        let item = db.medicines.find(m => m.id === id); 
+        if(item) { 
+            window.editId = id; 
+            document.getElementById('editName').value = item.name; 
+            document.getElementById('editCategory').value = item.category; 
+            document.getElementById('editQuantity').value = item.quantity; 
+            document.getElementById('editPrice').value = item.price; 
+            document.getElementById('editExpiry').value = item.expiryDate; 
+            document.getElementById('editManufacturer').value = item.manufacturer || ''; 
+            document.getElementById('editModal').style.display = 'flex'; 
+        } 
+    }
+    
+    function saveEditItem() { 
+        let item = db.medicines.find(m => m.id === window.editId); 
+        if(item) { 
+            item.name = document.getElementById('editName').value; 
+            item.category = document.getElementById('editCategory').value; 
+            item.quantity = parseInt(document.getElementById('editQuantity').value); 
+            item.price = parseFloat(document.getElementById('editPrice').value); 
+            item.expiryDate = document.getElementById('editExpiry').value; 
+            item.manufacturer = document.getElementById('editManufacturer').value; 
+            updateAll(); 
+            closeEditModal(); 
+            showToast('✅ Item updated successfully!', 'success');
+        } 
+    }
+    
+    function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+
+    function deleteItem(id) {
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Only Admin and Staff can delete!', 'error'); return; }
+        let item = db.medicines.find(m => m.id === id);
+        if(item && confirm(`Delete "${item.name}"? It will be moved to Deleted Items.`)) {
+            db.deletedItems.unshift({ 
+                id: generateUniqueId(),
+                originalId: id, 
+                name: item.name, 
+                category: item.category, 
+                quantity: item.quantity, 
+                price: item.price, 
+                expiryDate: item.expiryDate, 
+                manufacturer: item.manufacturer, 
+                deletedBy: currentUser.name + ' (' + currentUser.role + ')', 
+                deletedAt: getDateTime() 
+            });
+            db.medicines = db.medicines.filter(m => m.id !== id);
+            updateAll(); 
+            showToast(`✅ "${item.name}" moved to Deleted Items`, 'success');
+        }
+    }
+    
+    function restoreItem(delId) { 
+        if(currentUser.role !== 'admin') { showToast('Only Admin can restore items!', 'error'); return; }
+        let del = db.deletedItems.find(d => d.id === delId); 
+        if(del) { 
+            db.medicines.push({ 
+                id: del.originalId || generateUniqueId(), 
+                name: del.name, 
+                category: del.category, 
+                quantity: del.quantity, 
+                price: del.price, 
+                expiryDate: del.expiryDate, 
+                manufacturer: del.manufacturer, 
                 addedDate: new Date().toISOString() 
-            }; 
-            let existing = db.medicines.find(m => m.name.toLowerCase() === med.name.toLowerCase() && m.expiryDate === med.expiryDate); 
-            if(existing) existing.quantity += med.quantity; 
-            else db.medicines.push(med); 
-            db.inbound.unshift({ id: generateUniqueId(), date: new Date().toISOString(), medicineName: med.name, quantity: med.quantity, source: `Added by ${currentUser.name}` }); 
+            }); 
+            db.deletedItems = db.deletedItems.filter(d => d.id !== delId); 
             updateAll(); 
-            document.getElementById('stockInForm').reset(); 
-            showToast(`✅ Added ${med.quantity} x ${med.name}`, 'success');
-        });
-        
-        document.getElementById('stockOutForm').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Permission denied', 'error'); return; } 
-            let name = document.getElementById('sellMedicineInput').value, qty = parseInt(document.getElementById('sellQuantity').value); 
-            let med = db.medicines.find(m => m.name.toLowerCase() === name.toLowerCase()); 
-            if(!med) { showToast('Item not found', 'error'); return; } 
-            if(med.quantity < qty) { showToast(`Only ${med.quantity} available`, 'error'); return; } 
-            med.quantity -= qty; 
-            db.outbound.unshift({ id: generateUniqueId(), date: new Date().toISOString(), medicineName: name, quantity: qty, total: qty * med.price, customer: document.getElementById('customerName').value || 'Medical', source: `Issued by ${currentUser.name}` }); 
+            showToast('✅ Item restored successfully!', 'success');
+        } 
+    }
+    
+    function clearAllDeleted() { 
+        if(currentUser.role !== 'admin') { showToast('Admin only!', 'error'); return; } 
+        if(confirm('Permanently delete all deleted records?')) { 
+            db.deletedItems = []; 
             updateAll(); 
-            document.getElementById('stockOutForm').reset(); 
-            showToast(`✅ Issued ${qty} x ${name} - ₹${(qty * med.price).toFixed(2)}`, 'success');
-        });
-        
-        document.getElementById('backupFile').addEventListener('change', e => { 
-            if(e.target.files[0]) { 
-                let reader = new FileReader(); 
-                reader.onload = ev => { 
-                    try { 
-                        let d = JSON.parse(ev.target.result); 
-                        db.medicines = d.medicines || []; 
-                        db.inbound = d.inbound || []; 
-                        db.outbound = d.outbound || []; 
-                        db.deletedItems = d.deletedItems || []; 
-                        updateAll(); 
-                        showToast('✅ Data restored successfully!', 'success');
-                    } catch(e) { 
-                        showToast('Invalid file format', 'error');
-                    } 
-                }; 
-                reader.readAsText(e.target.files[0]); 
+            showToast('🗑️ All deleted records cleared', 'info');
+        } 
+    }
+
+    function loadDeletedTable() { 
+        if(currentUser.role !== 'admin') return;
+        let tbody = document.getElementById('deletedList'); 
+        if(!tbody) return; 
+        tbody.innerHTML = ''; 
+        if(!db.deletedItems.length) { 
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">No deleted items</td></tr>'; 
+            return; 
+        } 
+        db.deletedItems.forEach(d => { 
+            tbody.innerHTML += `<tr>
+                <td>${d.name}</td>
+                <td>${d.category}</td>
+                <td>${d.quantity}</td>
+                <td>₹${d.price}</td>
+                <td>${d.deletedBy}</td>
+                <td>${d.deletedAt}</td>
+                <td><button class="restore-btn" onclick="restoreItem('${d.id}')">↩️ Restore</button></td>
+            </tr>`; 
+        }); 
+    }
+
+    function filterOutboundHistory() {
+        let from = document.getElementById('outboundFromDate').value, to = document.getElementById('outboundToDate').value, search = document.getElementById('outboundSearch').value.toLowerCase();
+        let filtered = [...db.outbound];
+        if(from) { let fd = new Date(from); fd.setHours(0,0,0,0); filtered = filtered.filter(o => new Date(o.date) >= fd); }
+        if(to) { let td = new Date(to); td.setHours(23,59,59,999); filtered = filtered.filter(o => new Date(o.date) <= td); }
+        if(search) filtered = filtered.filter(o => (o.customer || '').toLowerCase().includes(search));
+        filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+        let tbody = document.getElementById('outboundList'); tbody.innerHTML = '';
+        if(!filtered.length) { tbody.innerHTML = '<tr><td colspan="6">No records</td></tr>'; return; }
+        filtered.slice(0, 100).forEach(o => { tbody.innerHTML += `<tr>
+            <td>${new Date(o.date).toLocaleDateString()}</td>
+            <td>${o.medicineName}</td>
+            <td>${o.quantity}</td>
+            <td>₹${o.total.toFixed(2)}</td>
+            <td>${o.customer || 'Medical'}</td>
+            <td>${o.source || 'Manual'}</td>
+        </tr>`; });
+    }
+    function resetOutboundFilters() { let t = new Date(), l = new Date(); l.setDate(t.getDate() - 30); document.getElementById('outboundFromDate').value = l.toISOString().split('T')[0]; document.getElementById('outboundToDate').value = t.toISOString().split('T')[0]; document.getElementById('outboundSearch').value = ''; filterOutboundHistory(); }
+
+    function setPeriod(period) {
+        let today = new Date(), start = new Date(), end = new Date();
+        if(period === 'today') { start = new Date(); end = new Date(); }
+        else if(period === 'thisWeek') { start.setDate(today.getDate() - today.getDay()); end = new Date(); }
+        else if(period === 'thisMonth') { start.setDate(1); end = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
+        else if(period === 'lastMonth') { start = new Date(today.getFullYear(), today.getMonth() - 1, 1); end = new Date(today.getFullYear(), today.getMonth(), 0); }
+        else if(period === 'thisQuarter') { let q = Math.floor(today.getMonth() / 3); start = new Date(today.getFullYear(), q * 3, 1); end = new Date(today.getFullYear(), q * 3 + 3, 0); }
+        else if(period === 'thisYear') { start = new Date(today.getFullYear(), 0, 1); end = new Date(today.getFullYear(), 11, 31); }
+        document.getElementById('reportFromDate').value = start.toISOString().split('T')[0];
+        document.getElementById('reportToDate').value = end.toISOString().split('T')[0];
+        generateReport(start, end);
+    }
+    
+    function applyCustomDateRange() { let from = new Date(document.getElementById('reportFromDate').value), to = new Date(document.getElementById('reportToDate').value); if(from && to && from <= to) generateReport(from, to); else showToast('Invalid dates', 'error'); }
+    
+    function generateReport(start, end) {
+        if(currentUser.role !== 'admin') return;
+        reportStartDate = start; reportEndDate = end;
+        let inboundFiltered = db.inbound.filter(i => { let d = new Date(i.date); return d >= start && d <= end; });
+        let outboundFiltered = db.outbound.filter(o => { let d = new Date(o.date); return d >= start && d <= end; });
+        let inQty = inboundFiltered.reduce((s,i) => s + i.quantity, 0);
+        let inVal = inboundFiltered.reduce((s,i) => s + (i.quantity * (db.medicines.find(m => m.name === i.medicineName)?.price || 0)), 0);
+        let outQty = outboundFiltered.reduce((s,o) => s + o.quantity, 0);
+        let outVal = outboundFiltered.reduce((s,o) => s + o.total, 0);
+        document.getElementById('summaryInboundQty').innerHTML = inQty; document.getElementById('summaryInboundVal').innerHTML = `₹${inVal.toFixed(2)}`;
+        document.getElementById('summaryOutboundQty').innerHTML = outQty; document.getElementById('summaryOutboundVal').innerHTML = `₹${outVal.toFixed(2)}`;
+        document.getElementById('summaryNetQty').innerHTML = inQty - outQty; document.getElementById('summaryNetVal').innerHTML = `₹${(inVal - outVal).toFixed(2)}`;
+        document.getElementById('avgIssueVal').innerHTML = outboundFiltered.length ? `₹${(outVal / outboundFiltered.length).toFixed(2)}` : '₹0';
+        let reportData = [];
+        inboundFiltered.forEach(i => reportData.push({ date: new Date(i.date), type: 'INBOUND', item: i.medicineName, qty: i.quantity, val: i.quantity * (db.medicines.find(m => m.name === i.medicineName)?.price || 0), source: i.source || 'Manual' }));
+        outboundFiltered.forEach(o => reportData.push({ date: new Date(o.date), type: 'OUTBOUND', item: o.medicineName, qty: o.quantity, val: o.total, source: o.customer || 'Medical' }));
+        reportData.sort((a,b) => b.date - a.date);
+        let tbody = document.getElementById('reportBody'); tbody.innerHTML = '';
+        reportData.forEach(r => { tbody.innerHTML += `<tr>
+            <td>${formatDate(r.date)}</td>
+            <td style="color:${r.type === 'INBOUND' ? 'green' : 'red'}">${r.type}</td>
+            <td>${r.item}</td>
+            <td>${r.qty}</td>
+            <td>₹${r.val.toFixed(2)}</td>
+            <td>${r.source}</td>
+        </tr>`; });
+        if(!reportData.length) tbody.innerHTML = '<tr><td colspan="6">No transactions</td></tr>';
+    }
+
+    // ============ EXCEL EXPORT FUNCTIONS ============
+    function exportAllToExcel() {
+        if(currentUser.role !== 'admin') { showToast('Only Admin can export complete report!', 'error'); return; }
+        let wb = XLSX.utils.book_new();
+        let stockData = db.medicines.map(m => ({ 'ID': String(m.id).slice(-8), 'Medical Item': m.name, 'Category': m.category, 'Stock': m.quantity, 'Price': m.price, 'Expiry': m.expiryDate }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockData), 'Current Stock');
+        let inboundData = db.inbound.map(i => ({ 'Date': new Date(i.date).toLocaleDateString(), 'Item': i.medicineName, 'Qty': i.quantity }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inboundData), 'Inbound History');
+        let outboundData = db.outbound.map(o => ({ 'Date': new Date(o.date).toLocaleDateString(), 'Item': o.medicineName, 'Qty': o.quantity, 'Total': o.total }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outboundData), 'Outbound History');
+        let deletedData = db.deletedItems.map(d => ({ 'Item': d.name, 'Deleted By': d.deletedBy, 'Deleted At': d.deletedAt }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(deletedData), 'Deleted Items');
+        XLSX.writeFile(wb, `SpiceJet_Complete_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        showToast('✅ Excel file with 4 sheets downloaded!', 'success');
+    }
+    
+    function exportStockToExcel() { 
+        let ws = XLSX.utils.json_to_sheet(db.medicines.map(m => ({ 'Medical Item': m.name, Category: m.category, Stock: m.quantity, Price: m.price, 'Expiry Date': m.expiryDate }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Stock'); 
+        XLSX.writeFile(wb, `SpiceJet_Stock_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Stock exported!', 'success');
+    }
+    
+    function exportLowStockToExcel() { 
+        let f = db.medicines.filter(m => m.quantity < 10); 
+        if(!f.length) { showToast('No low stock items', 'info'); return; } 
+        let ws = XLSX.utils.json_to_sheet(f.map(m => ({ 'Medical Item': m.name, Stock: m.quantity, Category: m.category, 'Expiry Date': m.expiryDate }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Low Stock'); 
+        XLSX.writeFile(wb, `SpiceJet_Low_Stock_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Low stock exported!', 'success');
+    }
+    
+    function exportExpiringToExcel() { 
+        let today = new Date(); 
+        let f = db.medicines.filter(m => { let d = (new Date(m.expiryDate) - today) / 86400000; return d <= expiryDays && d > 0; }); 
+        if(!f.length) { showToast('No expiring items', 'info'); return; } 
+        let ws = XLSX.utils.json_to_sheet(f.map(m => ({ 'Medical Item': m.name, 'Expiry Date': m.expiryDate, 'Days Left': Math.ceil((new Date(m.expiryDate) - today) / 86400000), Stock: m.quantity }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Expiring Items'); 
+        XLSX.writeFile(wb, `SpiceJet_Expiring_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Expiring items exported!', 'success');
+    }
+    
+    function exportExpiredToExcel() { 
+        let f = db.medicines.filter(m => new Date(m.expiryDate) < new Date()); 
+        if(!f.length) { showToast('No expired items', 'info'); return; } 
+        let ws = XLSX.utils.json_to_sheet(f.map(m => ({ 'Medical Item': m.name, 'Expiry Date': m.expiryDate, Stock: m.quantity }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Expired Items'); 
+        XLSX.writeFile(wb, `SpiceJet_Expired_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Expired items exported!', 'success');
+    }
+    
+    function exportInboundToExcel() { 
+        let ws = XLSX.utils.json_to_sheet(db.inbound.map(i => ({ Date: new Date(i.date).toLocaleDateString(), 'Medical Item': i.medicineName, Quantity: i.quantity, Source: i.source || 'Manual' }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Inbound History'); 
+        XLSX.writeFile(wb, `SpiceJet_Inbound_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Inbound history exported!', 'success');
+    }
+    
+    function exportOutboundToExcel() { 
+        let ws = XLSX.utils.json_to_sheet(db.outbound.map(o => ({ Date: new Date(o.date).toLocaleDateString(), 'Medical Item': o.medicineName, Quantity: o.quantity, 'Total (₹)': o.total.toFixed(2), 'Issued To': o.customer || 'Medical Department' }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Outbound History'); 
+        XLSX.writeFile(wb, `SpiceJet_Outbound_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Outbound history exported!', 'success');
+    }
+    
+    function exportDeletedToExcel() { 
+        if(currentUser.role !== 'admin') { showToast('Only Admin can export deleted items!', 'error'); return; }
+        let ws = XLSX.utils.json_to_sheet(db.deletedItems.map(d => ({ 'Medical Item': d.name, Category: d.category, Quantity: d.quantity, 'Price (₹)': d.price, 'Deleted By': d.deletedBy, 'Deleted At': d.deletedAt }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Deleted Items'); 
+        XLSX.writeFile(wb, `SpiceJet_Deleted_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Deleted items exported!', 'success');
+    }
+    
+    function exportPeriodReport() { 
+        if(currentUser.role !== 'admin') { showToast('Only Admin can export period report!', 'error'); return; }
+        if(!reportStartDate) { showToast('Select date range first', 'error'); return; } 
+        let inboundFiltered = db.inbound.filter(i => new Date(i.date) >= reportStartDate && new Date(i.date) <= reportEndDate); 
+        let outboundFiltered = db.outbound.filter(o => new Date(o.date) >= reportStartDate && new Date(o.date) <= reportEndDate); 
+        let data = []; 
+        inboundFiltered.forEach(i => data.push({ Date: new Date(i.date).toLocaleDateString(), Type: 'INBOUND', 'Medical Item': i.medicineName, Quantity: i.quantity, 'Value (₹)': (i.quantity * (db.medicines.find(m => m.name === i.medicineName)?.price || 0)).toFixed(2), Source: i.source || 'Manual' })); 
+        outboundFiltered.forEach(o => data.push({ Date: new Date(o.date).toLocaleDateString(), Type: 'OUTBOUND', 'Medical Item': o.medicineName, Quantity: o.quantity, 'Value (₹)': o.total.toFixed(2), Source: o.customer || 'Medical Department' })); 
+        data.sort((a,b) => new Date(b.Date) - new Date(a.Date)); 
+        let ws = XLSX.utils.json_to_sheet(data); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Period Report'); 
+        XLSX.writeFile(wb, `SpiceJet_Period_Report_${reportStartDate.toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Period report exported!', 'success');
+    }
+    
+    function exportInboundDetail() { 
+        if(currentUser.role !== 'admin') { showToast('Only Admin can export inbound detail!', 'error'); return; }
+        let f = db.inbound.filter(i => new Date(i.date) >= reportStartDate && new Date(i.date) <= reportEndDate); 
+        if(!f.length) { showToast('No inbound data in selected period', 'info'); return; } 
+        let ws = XLSX.utils.json_to_sheet(f.map(i => ({ Date: new Date(i.date).toLocaleDateString(), 'Medical Item': i.medicineName, Quantity: i.quantity, Source: i.source || 'Manual' }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Inbound Detail'); 
+        XLSX.writeFile(wb, `SpiceJet_Inbound_Detail_${reportStartDate.toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Inbound detail exported!', 'success');
+    }
+    
+    function exportOutboundDetail() { 
+        if(currentUser.role !== 'admin') { showToast('Only Admin can export outbound detail!', 'error'); return; }
+        let f = db.outbound.filter(o => new Date(o.date) >= reportStartDate && new Date(o.date) <= reportEndDate); 
+        if(!f.length) { showToast('No outbound data in selected period', 'info'); return; } 
+        let ws = XLSX.utils.json_to_sheet(f.map(o => ({ Date: new Date(o.date).toLocaleDateString(), 'Medical Item': o.medicineName, Quantity: o.quantity, 'Total (₹)': o.total.toFixed(2), 'Issued To': o.customer || 'Medical Department' }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Outbound Detail'); 
+        XLSX.writeFile(wb, `SpiceJet_Outbound_Detail_${reportStartDate.toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Outbound detail exported!', 'success');
+    }
+    
+    function exportFullBackup() { 
+        if(currentUser.role !== 'admin') { showToast('Only Admin can export backup!', 'error'); return; }
+        let blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'}); 
+        let a = document.createElement('a'); 
+        a.href = URL.createObjectURL(blob); 
+        a.download = `SpiceJet_Backup_${new Date().toISOString().split('T')[0]}.json`; 
+        a.click(); 
+        showToast('✅ Full backup exported!', 'success');
+    }
+    
+    function resetAllData() { 
+        if(currentUser.role !== 'admin') { showToast('Admin only!', 'error'); return; } 
+        if(confirm('⚠️ DELETE ALL DATA?')) { 
+            if(prompt('Type "DELETE" to confirm') === 'DELETE') { 
+                db = { medicines: [], inbound: [], outbound: [], deletedItems: [], config: {} }; 
+                updateAll(); 
+                showToast('✅ All data reset!', 'success');
             } 
+        } 
+    }
+    
+    function downloadInboundTemplate() { 
+        if(currentUser.role === 'guest') { showToast('Guest cannot download template!', 'error'); return; }
+        let ws = XLSX.utils.json_to_sheet([{ MedicalItem: "Paracetamol 500mg", Category: "Tablet", Quantity: 100, Price: 25, ExpiryDate: "2025-12-31", Supplier: "Cipla" }]); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Medical Stock Template"); 
+        XLSX.writeFile(wb, "SpiceJet_Medical_Stock_Template.xlsx"); 
+        showToast('✅ Template downloaded!', 'success');
+    }
+    
+    function importInboundExcel(file) {
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Only Admin and Staff can import!', 'error'); return; }
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            let addedCount = 0, updatedCount = 0;
+            rows.forEach(row => {
+                let medName = row.MedicalItem || row.name || row.Medicine;
+                if (medName) {
+                    let medicine = {
+                        id: generateUniqueId(),
+                        name: medName,
+                        category: row.Category || row.category || 'Tablet',
+                        quantity: parseInt(row.Quantity || row.quantity || 0),
+                        price: parseFloat(row.Price || row.price || 0),
+                        expiryDate: row.ExpiryDate || row.expiryDate || '',
+                        manufacturer: row.Supplier || row.manufacturer || 'Unknown',
+                        addedDate: new Date().toISOString()
+                    };
+                    if (medicine.name && medicine.quantity > 0) {
+                        let existing = db.medicines.find(m => m.name.toLowerCase() === medicine.name.toLowerCase() && m.expiryDate === medicine.expiryDate);
+                        if (existing) { existing.quantity += medicine.quantity; updatedCount++; }
+                        else { db.medicines.push(medicine); addedCount++; }
+                        db.inbound.unshift({ id: generateUniqueId(), date: new Date().toISOString(), medicineName: medicine.name, quantity: medicine.quantity, source: 'Excel Import' });
+                    }
+                }
+            });
+            updateAll();
+            showToast(`✅ Imported ${addedCount} new, Updated ${updatedCount} existing.`, 'success');
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    
+    function exportCurrentStock() { 
+        let ws = XLSX.utils.json_to_sheet(db.medicines.map(m => ({ 'Medical Item': m.name, Category: m.category, 'Current Stock': m.quantity, 'Price (₹)': m.price, 'Expiry Date': m.expiryDate, Supplier: m.manufacturer }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Current Medical Stock"); 
+        XLSX.writeFile(wb, `SpiceJet_Medical_Stock_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Stock exported!', 'success');
+    }
+    
+    function downloadOutboundTemplate() { 
+        if(currentUser.role === 'guest') { showToast('Guest cannot download template!', 'error'); return; }
+        let ws = XLSX.utils.json_to_sheet([{ MedicalItem: "Paracetamol 500mg", Quantity: 5, IssuedTo: "Captain Rajesh", IssueDate: new Date().toISOString().split('T')[0] }]); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Issue Template"); 
+        XLSX.writeFile(wb, "SpiceJet_Medical_Issue_Template.xlsx"); 
+        showToast('✅ Template downloaded!', 'success');
+    }
+    
+    function importOutboundExcel(file) {
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Only Admin and Staff can import!', 'error'); return; }
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            let issuedCount = 0, failedCount = 0;
+            rows.forEach(row => {
+                let medName = row.MedicalItem || row.name || row.Medicine;
+                let quantity = parseInt(row.Quantity || row.quantity || 0);
+                let issuedTo = row.IssuedTo || row.customer || 'Medical Department';
+                if (medName && quantity > 0) {
+                    let medicine = db.medicines.find(m => m.name.toLowerCase() === medName.toLowerCase());
+                    if (medicine && medicine.quantity >= quantity) {
+                        medicine.quantity -= quantity;
+                        db.outbound.unshift({ id: generateUniqueId(), date: new Date().toISOString(), medicineName: medicine.name, quantity: quantity, total: quantity * medicine.price, customer: issuedTo, source: 'Excel Import' });
+                        issuedCount++;
+                    } else { failedCount++; }
+                }
+            });
+            updateAll();
+            showToast(`✅ Processed ${issuedCount} issues! ${failedCount > 0 ? `Failed: ${failedCount}` : ''}`, 'success');
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    
+    function exportSalesReport() { 
+        let ws = XLSX.utils.json_to_sheet(db.outbound.map(s => ({ 'Date': new Date(s.date).toLocaleDateString(), 'Medical Item': s.medicineName, 'Quantity': s.quantity, 'Total (₹)': s.total, 'Issued To': s.customer || 'Medical Department' }))); 
+        let wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Issued Report"); 
+        XLSX.writeFile(wb, `SpiceJet_Issued_Report_${new Date().toISOString().split('T')[0]}.xlsx`); 
+        showToast('✅ Report exported!', 'success');
+    }
+
+    // ============ UPDATE ALL FUNCTION ============
+    function updateAll() {
+        document.getElementById('totalMedicines').innerHTML = db.medicines.length;
+        document.getElementById('lowStock').innerHTML = db.medicines.filter(m => m.quantity < 10).length;
+        let today = new Date();
+        document.getElementById('expiringSoon').innerHTML = db.medicines.filter(m => { let d = (new Date(m.expiryDate) - today) / 86400000; return d <= 30 && d > 0; }).length;
+        document.getElementById('expiredItems').innerHTML = db.medicines.filter(m => new Date(m.expiryDate) < today).length;
+        document.getElementById('totalValue').innerHTML = `₹${db.medicines.reduce((s,m) => s + (m.quantity * m.price), 0).toFixed(2)}`;
+        
+        let inboundTbody = document.getElementById('inboundList'); 
+        inboundTbody.innerHTML = ''; 
+        [...db.inbound].reverse().slice(0, 50).forEach(i => { 
+            inboundTbody.innerHTML += `<tr>
+                <td>${new Date(i.date).toLocaleDateString()}</td>
+                <td>${i.medicineName}</td>
+                <td>${i.quantity}</td>
+                <td>${i.source || 'Manual'}</td>
+            </tr>`; 
         });
         
-        document.getElementById('resetAllDataBtn').addEventListener('click', resetAllData);
-        document.getElementById('clearAllDeletedBtn').addEventListener('click', clearAllDeleted);
+        filterOutboundHistory();
         
-        document.getElementById('reportSearch').addEventListener('input', e => { 
-            let term = e.target.value.toLowerCase(); 
-            document.querySelectorAll('#reportBody tr').forEach(r => { 
-                r.style.display = r.innerText.toLowerCase().includes(term) ? '' : 'none'; 
-            }); 
+        let alertDiv = document.getElementById('expiryAlertList'); 
+        alertDiv.innerHTML = ''; 
+        let expiring = db.medicines.filter(m => { let d = (new Date(m.expiryDate) - today) / 86400000; return d <= 30 && d > 0; }); 
+        if(!expiring.length) alertDiv.innerHTML = '<div style="background:#d4edda;padding:15px;border-radius:5px;">✅ No expiring items</div>'; 
+        else expiring.forEach(m => { 
+            let days = Math.ceil((new Date(m.expiryDate) - today) / 86400000); 
+            alertDiv.innerHTML += `<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin-bottom:10px;border-radius:5px;">
+                <strong>⚠️ ${m.name}</strong><br>Stock: ${m.quantity} | Expires: ${formatDate(m.expiryDate)} | ${days} days left
+            </div>`; 
         });
         
-        document.getElementById('clearReportSearch').addEventListener('click', () => { 
-            document.getElementById('reportSearch').value = ''; 
-            document.querySelectorAll('#reportBody tr').forEach(r => r.style.display = ''); 
+        if(currentUser.role === 'admin') loadDeletedTable(); 
+        updateDatalists(); 
+        saveToLocal(); 
+        applyFiltersAndSort(); 
+        
+        if(currentUser.role === 'admin') generateReport(reportStartDate || new Date(new Date().setDate(new Date().getDate() - 30)), reportEndDate || new Date());
+        if(currentFolderHandle) autoSaveToFolder();
+        
+        // 🔥 Save to Supabase (async)
+        saveToSupabase().then(() => {
+            console.log('✅ Supabase sync completed');
+        }).catch(e => {
+            console.warn('⚠️ Supabase sync failed:', e);
         });
+    }
 
-        document.querySelectorAll('.tab-btn').forEach(btn => { 
-            btn.addEventListener('click', () => { 
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); 
-                btn.classList.add('active'); 
-                document.getElementById(btn.getAttribute('data-tab')).classList.add('active'); 
-                if(btn.getAttribute('data-tab') === 'deleted') loadDeletedTable(); 
-                if(btn.getAttribute('data-tab') === 'stockout') filterOutboundHistory(); 
-            }); 
-        });
+    // ============ EVENT LISTENERS ============
+    document.getElementById('inboundExcelFile').addEventListener('change', e => { if(e.target.files[0]) importInboundExcel(e.target.files[0]); });
+    document.getElementById('outboundExcelFile').addEventListener('change', e => { if(e.target.files[0]) importOutboundExcel(e.target.files[0]); });
+    document.getElementById('downloadInboundTemplateBtn').addEventListener('click', downloadInboundTemplate);
+    document.getElementById('importInboundExcelBtn').addEventListener('click', () => document.getElementById('inboundExcelFile').click());
+    document.getElementById('exportCurrentStockBtn').addEventListener('click', exportCurrentStock);
+    document.getElementById('downloadOutboundTemplateBtn').addEventListener('click', downloadOutboundTemplate);
+    document.getElementById('importOutboundExcelBtn').addEventListener('click', () => document.getElementById('outboundExcelFile').click());
+    document.getElementById('exportSalesReportBtn').addEventListener('click', exportSalesReport);
+    
+    document.getElementById('stockInForm').addEventListener('submit', e => { 
+        e.preventDefault(); 
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Permission denied', 'error'); return; } 
+        let med = { 
+            id: generateUniqueId(), 
+            name: document.getElementById('medName').value, 
+            category: document.getElementById('medCategory').value, 
+            quantity: parseInt(document.getElementById('medQuantity').value), 
+            price: parseFloat(document.getElementById('medPrice').value), 
+            expiryDate: document.getElementById('medExpiry').value, 
+            manufacturer: document.getElementById('medManufacturer').value || 'Unknown', 
+            addedDate: new Date().toISOString() 
+        }; 
+        let existing = db.medicines.find(m => m.name.toLowerCase() === med.name.toLowerCase() && m.expiryDate === med.expiryDate); 
+        if(existing) existing.quantity += med.quantity; 
+        else db.medicines.push(med); 
+        db.inbound.unshift({ id: generateUniqueId(), date: new Date().toISOString(), medicineName: med.name, quantity: med.quantity, source: `Added by ${currentUser.name}` }); 
+        updateAll(); 
+        document.getElementById('stockInForm').reset(); 
+        showToast(`✅ Added ${med.quantity} x ${med.name}`, 'success');
+    });
+    
+    document.getElementById('stockOutForm').addEventListener('submit', e => { 
+        e.preventDefault(); 
+        if(currentUser.role !== 'admin' && currentUser.role !== 'staff') { showToast('Permission denied', 'error'); return; } 
+        let name = document.getElementById('sellMedicineInput').value, qty = parseInt(document.getElementById('sellQuantity').value); 
+        let med = db.medicines.find(m => m.name.toLowerCase() === name.toLowerCase()); 
+        if(!med) { showToast('Item not found', 'error'); return; } 
+        if(med.quantity < qty) { showToast(`Only ${med.quantity} available`, 'error'); return; } 
+        med.quantity -= qty; 
+        db.outbound.unshift({ id: generateUniqueId(), date: new Date().toISOString(), medicineName: name, quantity: qty, total: qty * med.price, customer: document.getElementById('customerName').value || 'Medical', source: `Issued by ${currentUser.name}` }); 
+        updateAll(); 
+        document.getElementById('stockOutForm').reset(); 
+        showToast(`✅ Issued ${qty} x ${name} - ₹${(qty * med.price).toFixed(2)}`, 'success');
+    });
+    
+    document.getElementById('backupFile').addEventListener('change', e => { 
+        if(e.target.files[0]) { 
+            let reader = new FileReader(); 
+            reader.onload = ev => { 
+                try { 
+                    let d = JSON.parse(ev.target.result); 
+                    db.medicines = d.medicines || []; 
+                    db.inbound = d.inbound || []; 
+                    db.outbound = d.outbound || []; 
+                    db.deletedItems = d.deletedItems || []; 
+                    updateAll(); 
+                    showToast('✅ Data restored successfully!', 'success');
+                } catch(e) { 
+                    showToast('Invalid file format', 'error');
+                } 
+            }; 
+            reader.readAsText(e.target.files[0]); 
+        } 
+    });
+    
+    document.getElementById('resetAllDataBtn').addEventListener('click', resetAllData);
+    document.getElementById('clearAllDeletedBtn').addEventListener('click', clearAllDeleted);
+    
+    document.getElementById('reportSearch').addEventListener('input', e => { 
+        let term = e.target.value.toLowerCase(); 
+        document.querySelectorAll('#reportBody tr').forEach(r => { 
+            r.style.display = r.innerText.toLowerCase().includes(term) ? '' : 'none'; 
+        }); 
+    });
+    
+    document.getElementById('clearReportSearch').addEventListener('click', () => { 
+        document.getElementById('reportSearch').value = ''; 
+        document.querySelectorAll('#reportBody tr').forEach(r => r.style.display = ''); 
+    });
 
-        // Make functions global
-        window.editItem = editItem; window.saveEditItem = saveEditItem; window.closeEditModal = closeEditModal; 
-        window.deleteItem = deleteItem; window.restoreItem = restoreItem;
-        window.setFilter = setFilter; window.applyDashboardFilters = applyDashboardFilters; window.resetDashboardFilters = resetDashboardFilters;
-        window.filterOutboundHistory = filterOutboundHistory; window.resetOutboundFilters = resetOutboundFilters;
-        window.setPeriod = setPeriod; window.applyCustomDateRange = applyCustomDateRange;
-        window.exportAllToExcel = exportAllToExcel; window.exportStockToExcel = exportStockToExcel; window.exportLowStockToExcel = exportLowStockToExcel;
-        window.exportExpiringToExcel = exportExpiringToExcel; window.exportExpiredToExcel = exportExpiredToExcel; window.exportInboundToExcel = exportInboundToExcel;
-        window.exportOutboundToExcel = exportOutboundToExcel; window.exportDeletedToExcel = exportDeletedToExcel; window.exportPeriodReport = exportPeriodReport;
-        window.exportInboundDetail = exportInboundDetail; window.exportOutboundDetail = exportOutboundDetail; window.exportFullBackup = exportFullBackup;
-        window.downloadInboundTemplate = downloadInboundTemplate; window.downloadOutboundTemplate = downloadOutboundTemplate;
-        window.showAdminLogin = showAdminLogin; window.showStaffLogin = showStaffLogin; window.loginAsGuest = loginAsGuest;
-        window.verifyAdminPassword = verifyAdminPassword; window.verifyStaffPassword = verifyStaffPassword;
-        window.closeAdminModal = closeAdminModal; window.closeStaffModal = closeStaffModal;
-        window.selectFolder = selectFolder; window.saveToFolder = saveToFolder;
-        window.selectFolderFromPopup = selectFolderFromPopup; window.skipFolderSelection = skipFolderSelection;
-        window.forceRefresh = forceRefresh; window.fullSync = fullSync;
-        window.applyCustomDateRange = applyCustomDateRange;
+    document.querySelectorAll('.tab-btn').forEach(btn => { 
+        btn.addEventListener('click', () => { 
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); 
+            btn.classList.add('active'); 
+            document.getElementById(btn.getAttribute('data-tab')).classList.add('active'); 
+            if(btn.getAttribute('data-tab') === 'deleted') loadDeletedTable(); 
+            if(btn.getAttribute('data-tab') === 'stockout') filterOutboundHistory(); 
+        }); 
+    });
 
-        console.log('✅ SpiceJet SkyMed loaded with Supabase integration!');
-        console.log('☁️ Supabase URL:', SUPABASE_URL);
-    </script>
+    // Make functions global
+    window.editItem = editItem; window.saveEditItem = saveEditItem; window.closeEditModal = closeEditModal; 
+    window.deleteItem = deleteItem; window.restoreItem = restoreItem;
+    window.setFilter = setFilter; window.applyDashboardFilters = applyDashboardFilters; window.resetDashboardFilters = resetDashboardFilters;
+    window.filterOutboundHistory = filterOutboundHistory; window.resetOutboundFilters = resetOutboundFilters;
+    window.setPeriod = setPeriod; window.applyCustomDateRange = applyCustomDateRange;
+    window.exportAllToExcel = exportAllToExcel; window.exportStockToExcel = exportStockToExcel; window.exportLowStockToExcel = exportLowStockToExcel;
+    window.exportExpiringToExcel = exportExpiringToExcel; window.exportExpiredToExcel = exportExpiredToExcel; window.exportInboundToExcel = exportInboundToExcel;
+    window.exportOutboundToExcel = exportOutboundToExcel; window.exportDeletedToExcel = exportDeletedToExcel; window.exportPeriodReport = exportPeriodReport;
+    window.exportInboundDetail = exportInboundDetail; window.exportOutboundDetail = exportOutboundDetail; window.exportFullBackup = exportFullBackup;
+    window.downloadInboundTemplate = downloadInboundTemplate; window.downloadOutboundTemplate = downloadOutboundTemplate;
+    window.showAdminLogin = showAdminLogin; window.showStaffLogin = showStaffLogin; window.loginAsGuest = loginAsGuest;
+    window.verifyAdminPassword = verifyAdminPassword; window.verifyStaffPassword = verifyStaffPassword;
+    window.closeAdminModal = closeAdminModal; window.closeStaffModal = closeStaffModal;
+    window.selectFolder = selectFolder; window.saveToFolder = saveToFolder;
+    window.selectFolderFromPopup = selectFolderFromPopup; window.skipFolderSelection = skipFolderSelection;
+    window.forceRefresh = forceRefresh; window.fullSync = fullSync;
+    window.applyCustomDateRange = applyCustomDateRange;
+
+    console.log('✅ SpiceJet SkyMed loaded with Supabase integration!');
+    console.log('☁️ Supabase URL:', SUPABASE_URL);
+</script>
 </body>
 </html>

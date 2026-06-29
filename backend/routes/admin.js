@@ -3,8 +3,41 @@ const router = express.Router();
 const { pool } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
-// GET - All users with permissions
-router.get('/get-requests', async (req, res) => {
+// ============================================================
+// MIDDLEWARE - CHECK IF USER IS ADMIN
+// ============================================================
+async function isAdmin(req, res, next) {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ success: false, error: 'Unauthorized: No token' });
+        }
+
+        // Token se user info nikaalo
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        
+        const [users] = await pool.query(
+            'SELECT role FROM users WHERE id = ?',
+            [decoded.userId]
+        );
+
+        if (users.length === 0 || users[0].role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });
+        }
+
+        req.user = decoded;
+        next();
+    } catch (error) {
+        console.error('❌ Auth Error:', error);
+        return res.status(401).json({ success: false, error: 'Unauthorized: Invalid token' });
+    }
+}
+
+// ============================================================
+// GET - All users (ONLY ADMIN)
+// ============================================================
+router.get('/get-requests', isAdmin, async (req, res) => {
     try {
         const [users] = await pool.query(`
             SELECT 
@@ -41,8 +74,10 @@ router.get('/get-requests', async (req, res) => {
     }
 });
 
-// POST - Save permissions & status
-router.post('/save-requests', async (req, res) => {
+// ============================================================
+// POST - Save permissions (ONLY ADMIN)
+// ============================================================
+router.post('/save-requests', isAdmin, async (req, res) => {
     try {
         const { requests } = req.body;
         
@@ -92,8 +127,10 @@ router.post('/save-requests', async (req, res) => {
     }
 });
 
-// POST - Create new user
-router.post('/create-user', async (req, res) => {
+// ============================================================
+// POST - Create new user (ONLY ADMIN)
+// ============================================================
+router.post('/create-user', isAdmin, async (req, res) => {
     try {
         const { email, username, password, role, permissions } = req.body;
         
@@ -141,8 +178,10 @@ router.post('/create-user', async (req, res) => {
     }
 });
 
-// POST - Update user permissions
-router.post('/update-permissions', async (req, res) => {
+// ============================================================
+// POST - Update user permissions (ONLY ADMIN)
+// ============================================================
+router.post('/update-permissions', isAdmin, async (req, res) => {
     try {
         const { userId, permissions } = req.body;
         

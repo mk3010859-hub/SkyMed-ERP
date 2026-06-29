@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyMed Pro - Pricing</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/security.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+        body{min-height:100vh;display:flex;justify-content:center;align-items:center;background:linear-gradient(135deg,#0b2a4a 0%,#1a4f7a 50%,#2a6b9e 100%);padding:40px 20px}
+        .pricing-container{background:rgba(255,255,255,.95);border-radius:24px;padding:40px 50px;max-width:1100px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);animation:fadeIn .5s ease}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+        .header{text-align:center;margin-bottom:40px}
+        .header i{font-size:48px;color:#1a5cff;background:#e8f0fe;padding:18px;border-radius:50%}
+        .header h1{font-size:32px;color:#1a2639;margin-top:12px}
+        .header h1 span{color:#1a5cff}
+        .header p{color:#7a8fa5;font-size:16px;margin-top:6px}
+
+        .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+        .pricing-card{background:#fff;border-radius:16px;padding:30px 25px;border:2px solid #e8edf5;transition:.3s;text-align:center;position:relative}
+        .pricing-card:hover{transform:translateY(-5px);box-shadow:0 10px 40px rgba(0,0,0,.1)}
+        .pricing-card.popular{border-color:#1a5cff;background:#f8faff}
+        .pricing-card.popular .popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#1a5cff;color:#fff;padding:4px 20px;border-radius:30px;font-size:12px;font-weight:600}
+        .pricing-card .plan-name{font-size:20px;font-weight:700;color:#1a2639;margin-bottom:8px}
+        .pricing-card .plan-price{font-size:40px;font-weight:800;color:#1a5cff;margin:12px 0}
+        .pricing-card .plan-price span{font-size:16px;font-weight:400;color:#7a8fa5}
+        .pricing-card .plan-desc{color:#7a8fa5;font-size:14px;margin-bottom:20px}
+        .pricing-card .features{list-style:none;text-align:left;padding:0;margin:0 0 24px 0}
+        .pricing-card .features li{padding:8px 0;border-bottom:1px solid #eef3f9;font-size:14px;color:#3a5a7a;display:flex;align-items:center;gap:10px}
+        .pricing-card .features li:last-child{border-bottom:none}
+        .pricing-card .features li i{color:#1e8b5c;font-size:16px;width:20px}
+        .pricing-card .features li .fa-times{color:#c44545}
+        .btn{width:100%;padding:12px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:.3s}
+        .btn-primary{background:#1a5cff;color:#fff}
+        .btn-primary:hover{background:#0f4ad0;transform:translateY(-2px);box-shadow:0 8px 25px rgba(26,92,255,.3)}
+        .btn-outline{background:transparent;border:2px solid #dce4ed;color:#3a5a7a}
+        .btn-outline:hover{background:#f5f8fc;border-color:#1a5cff}
+        .btn-success{background:#1e8b5c;color:#fff}
+        .btn-success:hover{background:#156a45;transform:translateY(-2px);box-shadow:0 8px 25px rgba(30,139,92,.3)}
+
+        .login-link{text-align:center;margin-top:30px;font-size:14px;color:#7a8fa5}
+        .login-link a{color:#1a5cff;text-decoration:none;font-weight:600}
+        .login-link a:hover{text-decoration:underline}
+
+        .footer-text{text-align:center;margin-top:20px;color:#8a99b0;font-size:12px}
+        .footer-text span{color:#1a5cff;font-weight:600}
+
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:center}
+        .modal-overlay.active{display:flex}
+        .modal-box{background:#fff;border-radius:16px;padding:30px;max-width:450px;width:95%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+        .modal-box h3{margin-bottom:16px;color:#1a3a5a}
+        .modal-box .form-group{margin-bottom:14px}
+        .modal-box .form-group label{display:block;font-size:13px;font-weight:600;color:#3a5a7a;margin-bottom:4px}
+        .modal-box .form-group input{width:100%;padding:10px 12px;border:2px solid #dce4ed;border-radius:8px;font-size:14px;outline:none}
+        .modal-box .form-group input:focus{border-color:#1a5cff}
+        .modal-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+
+        .toast{position:fixed;bottom:20px;right:20px;padding:12px 24px;border-radius:10px;color:#fff;font-weight:500;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+        .toast.success{background:#1e8b5c}
+        .toast.error{background:#c44545}
+
+        @media(max-width:768px){.pricing-grid{grid-template-columns:1fr}.pricing-container{padding:30px 20px}}
+    </style>
+</head>
+<body>
+
+<div class="pricing-container">
+    <div class="header">
+        <i class="fas fa-notes-medical"></i>
+        <h1>Sky<span>Med</span> Pricing</h1>
+        <p>Choose the plan that fits your business needs</p>
+    </div>
+
+    <div class="pricing-grid">
+        <!-- Starter -->
+        <div class="pricing-card">
+            <div class="plan-name">Starter</div>
+            <div class="plan-price">$19 <span>/month</span></div>
+            <div class="plan-desc">Perfect for small businesses</div>
+            <ul class="features">
+                <li><i class="fas fa-check"></i> 5 Users</li>
+                <li><i class="fas fa-check"></i> Inventory Management</li>
+                <li><i class="fas fa-check"></i> Basic Reports</li>
+                <li><i class="fas fa-check"></i> Email Support</li>
+                <li><i class="fas fa-times"></i> 2FA Security</li>
+                <li><i class="fas fa-times"></i> Advanced Reports</li>
+            </ul>
+            <button class="btn btn-primary" onclick="selectPlan('starter', 19)">Start Free Trial</button>
+        </div>
+
+        <!-- Professional (Popular) -->
+        <div class="pricing-card popular">
+            <div class="popular-badge">⭐ Most Popular</div>
+            <div class="plan-name">Professional</div>
+            <div class="plan-price">$49 <span>/month</span></div>
+            <div class="plan-desc">Best for growing businesses</div>
+            <ul class="features">
+                <li><i class="fas fa-check"></i> 20 Users</li>
+                <li><i class="fas fa-check"></i> Inventory + CRM</li>
+                <li><i class="fas fa-check"></i> Advanced Reports</li>
+                <li><i class="fas fa-check"></i> 2FA Security</li>
+                <li><i class="fas fa-check"></i> Priority Support</li>
+                <li><i class="fas fa-check"></i> Custom Fields</li>
+            </ul>
+            <button class="btn btn-success" onclick="selectPlan('professional', 49)">Start Free Trial</button>
+        </div>
+
+        <!-- Enterprise -->
+        <div class="pricing-card">
+            <div class="plan-name">Enterprise</div>
+            <div class="plan-price">$199 <span>/month</span></div>
+            <div class="plan-desc">For large organizations</div>
+            <ul class="features">
+                <li><i class="fas fa-check"></i> Unlimited Users</li>
+                <li><i class="fas fa-check"></i> Full ERP Suite</li>
+                <li><i class="fas fa-check"></i> Custom Reports</li>
+                <li><i class="fas fa-check"></i> API Access</li>
+                <li><i class="fas fa-check"></i> Dedicated Support</li>
+                <li><i class="fas fa-check"></i> Customization</li>
+            </ul>
+            <button class="btn btn-outline" onclick="selectPlan('enterprise', 199)">Contact Sales</button>
+        </div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;padding:16px;background:#f8faff;border-radius:12px;">
+        <h3 style="color:#1a2639;">🔒 All plans include 7-day free trial</h3>
+        <p style="color:#7a8fa5;font-size:14px;">No credit card required. Cancel anytime.</p>
+    </div>
+
+    <div class="login-link">
+        Already have an account? <a href="login.html">Sign in</a>
+    </div>
+
+    <div class="footer-text">
+        <i class="fas fa-shield-alt" style="color:#1a5cff;"></i> Secure · <span>SkyMed Pro</span>
+        <br>
+        <small style="font-size:10px;">
+            <i class="fas fa-code"></i> Developed by 
+            <a href="https://www.linkedin.com/in/ram-kumar-60072454/" target="_blank" style="color:#1a5cff;text-decoration:none;">
+                Ram Kumar
+            </a>
+            &nbsp;|&nbsp; <i class="fas fa-phone"></i> +91-97364-38856
+        </small>
+    </div>
+</div>
+
+<div class="modal-overlay" id="trialModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-rocket"></i> Start Your Free Trial</h3>
+        <form id="trialForm" onsubmit="startTrial(event)">
+            <div class="form-group">
+                <label>Company Name *</label>
+                <input type="text" id="companyName" placeholder="Your company name" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address *</label>
+                <input type="email" id="trialEmail" placeholder="your@email.com" required>
+            </div>
+            <div class="form-group" style="font-size:13px;color:#7a8fa5;">
+                <i class="fas fa-info-circle"></i> 7-day free trial. No credit card required.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeTrialModal()" style="width:auto;padding:8px 20px;">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="trialBtn" style="width:auto;padding:8px 20px;">
+                    <i class="fas fa-rocket"></i> Start Trial
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let selectedPlan = 'starter';
+
+function selectPlan(plan, price) {
+    selectedPlan = plan;
+    document.getElementById('trialModal').classList.add('active');
+    document.getElementById('trialEmail').value = localStorage.getItem('userEmail') || '';
+}
+
+function closeTrialModal() {
+    document.getElementById('trialModal').classList.remove('active');
+}
+
+async function startTrial(e) {
+    e.preventDefault();
+    const companyName = document.getElementById('companyName').value.trim();
+    const email = document.getElementById('trialEmail').value.trim();
+    const btn = document.getElementById('trialBtn');
+
+    if (!companyName || !email) {
+        showToast('⚠️ Please fill all fields!', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    try {
+        const response = await fetch('/api/license/trial', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyName, email, plan: selectedPlan })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Trial creation failed');
+
+        localStorage.setItem('licenseKey', data.licenseKey);
+        localStorage.setItem('userEmail', email);
+
+        showToast('✅ Trial started successfully! Check your email.', 'success');
+        closeTrialModal();
+
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 2000);
+
+    } catch (error) {
+        showToast('❌ ' + error.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-rocket"></i> Start Trial';
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    toast.style.display = 'block';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.style.display = 'none';
+    }, 4000);
+}
+</script>
+</body>
+</html>

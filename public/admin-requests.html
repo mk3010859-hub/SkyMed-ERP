@@ -39,6 +39,8 @@
         .btn-danger:hover{background:#a13232}
         .btn-outline{background:transparent;border:1px solid #dce4ed;color:#3a5a7a}
         .btn-outline:hover{background:#f5f8fc}
+        .btn-logout{background:#c44545;color:#fff;border:none;padding:6px 16px;border-radius:30px;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;gap:5px;transition:.2s;font-weight:600}
+        .btn-logout:hover{background:#a13232}
 
         .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
         .stat-card{background:#fff;padding:16px 20px;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
@@ -71,16 +73,48 @@
         .toast{position:fixed;bottom:20px;right:20px;padding:12px 24px;border-radius:10px;color:#fff;font-weight:500;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.15)}
         .toast.success{background:#1e8b5c}
         .toast.error{background:#c44545}
+        .btn-logout{background:#c44545;color:#fff;border:none;padding:6px 16px;border-radius:30px;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;gap:5px;transition:.2s;font-weight:600}
+        .btn-logout:hover{background:#a13232}
     </style>
 </head>
 <body>
 
 <script>
     (function() {
-        if (sessionStorage.getItem('skymed_logged_in') !== 'true') {
+        if (!localStorage.getItem('jwt_token')) {
             window.location.href = 'login.html';
         }
     })();
+
+    function toggleSubMenu(id) {
+        const sub = document.getElementById(id);
+        const arrow = document.getElementById(id + 'Arrow');
+        if (!sub) return;
+        sub.classList.toggle('open');
+        if (arrow) {
+            arrow.style.transform = sub.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+    }
+
+    function logoutUser() {
+        if (confirm('⚠️ Are you sure you want to logout?')) {
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const financeSub = document.getElementById('financeSub');
+        if (financeSub) {
+            const hasActive = financeSub.querySelector('a.active');
+            if (hasActive) {
+                financeSub.classList.add('open');
+                const arrow = document.getElementById('financeArrow');
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            }
+        }
+    });
 </script>
 
 <div class="sidebar">
@@ -89,12 +123,16 @@
         <small>v7.0</small>
     </div>
     <div class="nav">
-        <a href="dashboard.html"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
+        <a href="index.html"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
         <a href="master.html"><i class="fas fa-building"></i> <span>Master Vendor</span></a>
         <a href="contracts.html"><i class="fas fa-file-contract"></i> <span>Contracts</span></a>
         <a href="general.html"><i class="fas fa-clipboard-list"></i> <span>General Entry</span></a>
         <a href="admin-requests.html" class="active"><i class="fas fa-user-check"></i> <span>Pending Requests</span></a>
         <a href="settings.html"><i class="fas fa-cog"></i> <span>Settings</span></a>
+    </div>
+    <div class="folder-info" onclick="selectFolder()">
+        <i class="fas fa-folder"></i> <span id="folderLabel">Select Folder</span>
+        <span class="sub">Click to choose folder</span>
     </div>
     <div class="user">
         <i class="fas fa-user-circle" style="font-size:1.4rem;opacity:.7;"></i>
@@ -107,6 +145,7 @@
         <h1><i class="fas fa-user-check" style="color:#1a5cff;"></i> Pending Registration Requests</h1>
         <div class="header-actions">
             <button class="btn btn-primary" onclick="loadRequests()"><i class="fas fa-sync"></i> Refresh</button>
+            <button class="btn btn-logout" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
 
@@ -163,11 +202,22 @@
 <div id="toast" class="toast"></div>
 
 <script>
-let currentUserId = null;
+// ============================================================
+// LOGOUT
+// ============================================================
+function logoutUser() {
+    if (confirm('⚠️ Are you sure you want to logout?')) {
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
+    }
+}
 
 // ============================================================
 // LOAD REQUESTS
 // ============================================================
+let currentUserId = null;
+
 async function loadRequests() {
     const tbody = document.getElementById('requestsBody');
     tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
@@ -197,7 +247,7 @@ async function loadRequests() {
         if (!res.ok) {
             if (res.status === 403) {
                 showToast('❌ Admin access required!', 'error');
-                setTimeout(() => window.location.href = 'dashboard.html', 2000);
+                setTimeout(() => window.location.href = 'index.html', 2000);
                 return;
             }
             throw new Error('Failed to load requests');

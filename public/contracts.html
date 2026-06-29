@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkyMed Pro - Contracts</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="js/security.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
@@ -36,7 +36,7 @@
         .nav-sub a:hover{background:rgba(255,255,255,.05);color:#fff}
         .nav-sub a.active{background:rgba(255,255,255,.08);color:#fff;border-left-color:#7bc5f5}
         .nav-sub a i{width:20px;text-align:center;font-size:.7rem}
-        
+
         .main{flex:1;padding:20px 24px;overflow-y:auto;max-height:100vh}
         .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
         .header h1{font-size:1.4rem;color:#1a3a5a}
@@ -53,7 +53,9 @@
         .btn-outline{background:transparent;border:1px solid #dce4ed;color:#3a5a7a}
         .btn-outline:hover{background:#f5f8fc}
         .btn-sm{padding:3px 10px;font-size:.7rem}
-        
+        .btn-logout{background:#c44545;color:#fff;border:none;padding:6px 16px;border-radius:30px;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;gap:5px;transition:.2s;font-weight:600}
+        .btn-logout:hover{background:#a13232}
+
         .filter-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 12px;background:#f7faff;border-radius:10px;border:1px solid #e8edf5;margin-bottom:12px}
         .filter-bar select,.filter-bar input{padding:4px 10px;border-radius:30px;border:1px solid #dce4ed;background:#fff;font-size:.75rem}
         .filter-bar select:focus,.filter-bar input:focus{outline:0;border-color:#2a6b9e}
@@ -80,7 +82,6 @@
         th{background:#f5f8fc;padding:8px 10px;text-align:left;font-weight:700;color:#3a5a7a;position:sticky;top:0;z-index:2;border-bottom:2px solid #e0e7ef;white-space:nowrap}
         td{padding:6px 10px;border-bottom:1px solid #eef3f9;cursor:pointer}
         tr:hover td{background:#f7faff}
-        tr.selected{background:#e6efff !important;border-left:3px solid #1a5cff}
         
         .badge{display:inline-block;padding:1px 10px;border-radius:30px;font-size:.6rem;font-weight:700}
         .badge-success{background:#dff0e8;color:#1a6a4a}
@@ -151,13 +152,16 @@
         .vendor-combo input{flex:1;min-width:150px}
         .vendor-combo .new-vendor-badge{background:#1e8b5c;color:#fff;padding:2px 10px;border-radius:30px;font-size:.6rem;font-weight:600;white-space:nowrap}
         
+        .btn-logout{background:#c44545;color:#fff;border:none;padding:6px 16px;border-radius:30px;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;gap:5px;transition:.2s;font-weight:600}
+        .btn-logout:hover{background:#a13232}
+        
         @media(max-width:768px){.sidebar{width:60px}.sidebar .logo span,.sidebar .logo small,.sidebar .nav a span,.sidebar .user .name,.sidebar .user .role,.sidebar .folder-info span{display:none}.sidebar .nav a{padding:10px 18px;justify-content:center}.sidebar .folder-info .sub{display:none}.main{padding:12px}.validity-notice{flex-direction:column;align-items:stretch}.contract-info-card{grid-template-columns:1fr 1fr}}
     </style>
 </head>
 <body>
 <script>
     (function() {
-        if (sessionStorage.getItem('skymed_logged_in') !== 'true') {
+        if (!localStorage.getItem('jwt_token')) {
             window.location.href = 'login.html';
         }
     })();
@@ -169,6 +173,14 @@
         sub.classList.toggle('open');
         if (arrow) {
             arrow.style.transform = sub.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+    }
+
+    function logoutUser() {
+        if (confirm('⚠️ Are you sure you want to logout?')) {
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
         }
     }
 
@@ -189,8 +201,8 @@
     <div class="logo"><i class="fas fa-notes-medical"></i> <span>SkyMed</span><small>v6.0</small></div>
 <div class="nav">
     <a href="index.html"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
-    <a href="master.html" class="active"><i class="fas fa-building"></i> <span>Master Vendor</span></a>
-    <a href="contracts.html"><i class="fas fa-file-contract"></i> <span>Contracts</span></a>
+    <a href="master.html"><i class="fas fa-building"></i> <span>Master Vendor</span></a>
+    <a href="contracts.html" class="active"><i class="fas fa-file-contract"></i> <span>Contracts</span></a>
     <a href="general.html"><i class="fas fa-clipboard-list"></i> <span>General Entry</span></a>
     
     <div class="nav-group">
@@ -208,10 +220,11 @@
     
     <a href="provision.html"><i class="fas fa-calculator"></i> <span>Provision</span></a>
     <a href="payroll.html"><i class="fas fa-users"></i> <span>Payroll</span></a>
-   <a href="assets.html"><i class="fas fa-laptop"></i> <span>Assets</span></a>
-        <a href="imprest.html"><i class="fas fa-wallet"></i> <span>Imprest</span></a>
+    <a href="assets.html"><i class="fas fa-laptop"></i> <span>Assets</span></a>
+    <a href="imprest.html"><i class="fas fa-wallet"></i> <span>Imprest</span></a>
     <a href="deleted.html"><i class="fas fa-trash"></i> <span>Deleted</span></a>
     <a href="settings.html"><i class="fas fa-cog"></i> <span>Settings</span></a>
+    <a href="admin-requests.html"><i class="fas fa-user-check"></i> <span>Pending Requests</span></a>
 </div>
     <div class="folder-info" onclick="selectFolder()"><i class="fas fa-folder"></i> <span id="folderLabel">Select Folder</span><span class="sub">Click to choose folder</span></div>
     <div class="user"><i class="fas fa-user-circle" style="font-size:1.4rem;opacity:.7;"></i><div><span class="name">Admin</span><br><span class="role">Administrator</span></div></div>
@@ -227,6 +240,7 @@
             <button class="btn btn-outline" onclick="document.getElementById('importInput').click()"><i class="fas fa-file-import"></i> Import</button>
             <button class="btn btn-outline" onclick="manualSave()"><i class="fas fa-save"></i> Save</button>
             <input type="file" id="importInput" accept=".csv,.xlsx" style="display:none" onchange="importContracts(event)">
+            <button class="btn btn-logout" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
 
@@ -311,8 +325,31 @@
 
 <script src="js/db.js"></script>
 <script>
+// ============================================================
+// LOGOUT
+// ============================================================
+function logoutUser() {
+    if (confirm('⚠️ Are you sure you want to logout?')) {
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
+    }
+}
+
+// ============================================================
+// DATA
+// ============================================================
 let vendors = [], contracts = [], contractHistory = [], dataLoaded = false;
 let expiryDays = 60;
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+}
+
+function formatCurrency(num) {
+    if (num === undefined || num === null || isNaN(num)) return '₹0';
+    return '₹' + parseFloat(num).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+}
 
 async function loadContracts() {
     try {
@@ -658,8 +695,8 @@ async function saveAddContract() {
                     address: '',
                     createdAt: new Date().toISOString()
                 };
-                await db.put('vendors', newVendor);
-                vendors = await db.getAll('vendors');
+                const savedVendor = await db.add('vendors', newVendor);
+                if (savedVendor) vendors.push(savedVendor);
             }
         } else {
             const vendor = vendors.find(v => v.code === vendorCode);
@@ -683,12 +720,15 @@ async function saveAddContract() {
             revisions: 0,
             createdAt: new Date().toISOString()
         };
-        await db.put('contracts', contractData);
-        await db.addContractHistory(contractData.id, vendorCode, vendorName, 'Created', 'New contract created', new Date().toISOString().split('T')[0], null, { status: 'Active', endDate: endDate });
-        closeAddModal();
-        await loadContracts();
-        await db.triggerSync();
-        alert(`✅ New contract added successfully! Vendor: ${vendorName} (${vendorCode})`);
+        const saved = await db.add('contracts', contractData);
+        if (saved) {
+            contracts.push(saved);
+            await db.addContractHistory(saved.id, vendorCode, vendorName, 'Created', 'New contract created', new Date().toISOString().split('T')[0], null, { status: 'Active', endDate: endDate });
+            closeAddModal();
+            await loadContracts();
+            await db.triggerSync();
+            alert(`✅ New contract added successfully! Vendor: ${vendorName} (${vendorCode})`);
+        }
         return;
     }
     
@@ -705,53 +745,78 @@ async function saveAddContract() {
     let detail = '';
     let newStatus = contract.status;
     
-    if (action === 'addendum') {
-        const revisedRate = document.getElementById('a_revisedRate').value;
-        const revisedTerms = document.getElementById('a_revisedTerms').value.trim();
-        contract.revisions = (contract.revisions || 0) + 1;
-        if (revisedRate) contract.rate = parseFloat(revisedRate);
-        await db.put('contracts', contract);
-        detail = `Addendum → Reason: ${reason} | Revised Rate: ${revisedRate || 'N/A'} | Revised Terms: ${revisedTerms || 'N/A'}`;
-    } else if (action === 'extension') {
-        const revisedRate = document.getElementById('a_revisedRate').value;
-        const revisedTerms = document.getElementById('a_revisedTerms').value.trim();
-        const newExpiry = document.getElementById('a_newExpiry').value;
-        if (!newExpiry) { alert('Please select new expiry date!'); return; }
-        contract.endDate = newExpiry;
-        contract.extended = true;
-        contract.status = 'Extended';
-        contract.revisions = (contract.revisions || 0) + 1;
-        if (revisedRate) contract.rate = parseFloat(revisedRate);
-        await db.put('contracts', contract);
-        detail = `Extension → Reason: ${reason} | New Expiry: ${newExpiry} | Revised Rate: ${revisedRate || 'N/A'} | Revised Terms: ${revisedTerms || 'N/A'}`;
-        newStatus = 'Extended';
-    } else if (action === 'termination') {
-        contract.status = 'Terminated';
-        contract.revisions = (contract.revisions || 0) + 1;
-        await db.put('contracts', contract);
-        detail = `Termination → Reason: ${reason}`;
-        newStatus = 'Terminated';
-    } else if (action === 'suspension') {
-        contract.status = 'Suspended';
-        contract.suspensionReason = reason;
-        contract.revisions = (contract.revisions || 0) + 1;
-        await db.put('contracts', contract);
-        detail = `Suspension → Reason: ${reason}`;
-        newStatus = 'Suspended';
-    } else if (action === 'others') {
-        const specify = document.getElementById('a_othersSpecify').value.trim();
-        if (!specify) { alert('Please specify the action!'); return; }
-        contract.revisions = (contract.revisions || 0) + 1;
-        await db.put('contracts', contract);
-        detail = `Others (${specify}) → ${reason}`;
+    try {
+        if (action === 'addendum') {
+            const revisedRate = document.getElementById('a_revisedRate').value;
+            const revisedTerms = document.getElementById('a_revisedTerms').value.trim();
+            contract.revisions = (contract.revisions || 0) + 1;
+            if (revisedRate) contract.rate = parseFloat(revisedRate);
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Addendum → Reason: ${reason} | Revised Rate: ${revisedRate || 'N/A'} | Revised Terms: ${revisedTerms || 'N/A'}`;
+        } else if (action === 'extension') {
+            const revisedRate = document.getElementById('a_revisedRate').value;
+            const revisedTerms = document.getElementById('a_revisedTerms').value.trim();
+            const newExpiry = document.getElementById('a_newExpiry').value;
+            if (!newExpiry) { alert('Please select new expiry date!'); return; }
+            contract.endDate = newExpiry;
+            contract.extended = true;
+            contract.status = 'Extended';
+            contract.revisions = (contract.revisions || 0) + 1;
+            if (revisedRate) contract.rate = parseFloat(revisedRate);
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Extension → Reason: ${reason} | New Expiry: ${newExpiry} | Revised Rate: ${revisedRate || 'N/A'} | Revised Terms: ${revisedTerms || 'N/A'}`;
+            newStatus = 'Extended';
+        } else if (action === 'termination') {
+            contract.status = 'Terminated';
+            contract.revisions = (contract.revisions || 0) + 1;
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Termination → Reason: ${reason}`;
+            newStatus = 'Terminated';
+        } else if (action === 'suspension') {
+            contract.status = 'Suspended';
+            contract.suspensionReason = reason;
+            contract.revisions = (contract.revisions || 0) + 1;
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Suspension → Reason: ${reason}`;
+            newStatus = 'Suspended';
+        } else if (action === 'others') {
+            const specify = document.getElementById('a_othersSpecify').value.trim();
+            if (!specify) { alert('Please specify the action!'); return; }
+            contract.revisions = (contract.revisions || 0) + 1;
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Others (${specify}) → ${reason}`;
+        }
+        
+        await db.addContractHistory(contractId, contract.vendorCode, contract.vendorName, action.charAt(0).toUpperCase() + action.slice(1), detail, new Date().toISOString().split('T')[0], null, { status: newStatus, endDate: contract.endDate });
+        
+        closeAddModal();
+        await loadContracts();
+        await db.triggerSync();
+        alert(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)} applied successfully!`);
+    } catch(e) {
+        console.error('Save error:', e);
+        alert('❌ Error: ' + e.message);
     }
-    
-    await db.addContractHistory(contractId, contract.vendorCode, contract.vendorName, action.charAt(0).toUpperCase() + action.slice(1), detail, new Date().toISOString().split('T')[0], null, { status: newStatus, endDate: contract.endDate });
-    
-    closeAddModal();
-    await loadContracts();
-    await db.triggerSync();
-    alert(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)} applied successfully!`);
 }
 
 function openDetailModal(contractId) {
@@ -854,60 +919,85 @@ async function applyDetailAction(actionType, contractId) {
     let detail = '';
     let reason = '';
 
-    if (actionType === 'addendum') {
-        reason = document.getElementById('d_add_reason').value.trim();
-        if (!reason) { alert('Please enter reason for addendum!'); return; }
-        const revisedRate = document.getElementById('d_add_revisedRate').value;
-        const revisedTerms = document.getElementById('d_add_revisedTerms').value.trim();
-        contract.revisions = (contract.revisions || 0) + 1;
-        if (revisedRate) contract.rate = parseFloat(revisedRate);
-        await db.put('contracts', contract);
-        detail = `Addendum → Reason: ${reason} | Revised Rate: ${revisedRate || 'N/A'} | Revised Terms: ${revisedTerms || 'N/A'}`;
-    } else if (actionType === 'extension') {
-        reason = document.getElementById('d_ext_reason').value.trim();
-        if (!reason) { alert('Please enter reason for extension!'); return; }
-        const newExpiry = document.getElementById('d_ext_newExpiry').value;
-        if (!newExpiry) { alert('Please select new expiry date!'); return; }
-        const revisedRate = document.getElementById('d_ext_revisedRate').value;
-        const revisedTerms = document.getElementById('d_ext_revisedTerms').value.trim();
-        contract.endDate = newExpiry;
-        contract.extended = true;
-        contract.status = 'Extended';
-        contract.revisions = (contract.revisions || 0) + 1;
-        if (revisedRate) contract.rate = parseFloat(revisedRate);
-        await db.put('contracts', contract);
-        detail = `Extension → Reason: ${reason} | New Expiry: ${newExpiry} | Revised Rate: ${revisedRate || 'N/A'} | Revised Terms: ${revisedTerms || 'N/A'}`;
-    } else if (actionType === 'termination') {
-        reason = document.getElementById('d_term_reason').value.trim();
-        if (!reason) { alert('Please enter reason for termination!'); return; }
-        contract.status = 'Terminated';
-        contract.revisions = (contract.revisions || 0) + 1;
-        await db.put('contracts', contract);
-        detail = `Termination → Reason: ${reason}`;
-    } else if (actionType === 'suspension') {
-        reason = document.getElementById('d_sus_reason').value.trim();
-        if (!reason) { alert('Please enter reason for suspension!'); return; }
-        contract.status = 'Suspended';
-        contract.suspensionReason = reason;
-        contract.revisions = (contract.revisions || 0) + 1;
-        await db.put('contracts', contract);
-        detail = `Suspension → Reason: ${reason}`;
-    } else if (actionType === 'others') {
-        const actionLabel = document.getElementById('d_others_action').value.trim();
-        const details = document.getElementById('d_others_details').value.trim();
-        if (!actionLabel) { alert('Please specify the action!'); return; }
-        if (!details) { alert('Please provide details!'); return; }
-        contract.revisions = (contract.revisions || 0) + 1;
-        await db.put('contracts', contract);
-        detail = `Others (${actionLabel}) → ${details}`;
+    try {
+        if (actionType === 'addendum') {
+            reason = document.getElementById('d_add_reason').value.trim();
+            if (!reason) { alert('Please enter reason for addendum!'); return; }
+            const revisedRate = document.getElementById('d_add_revisedRate').value;
+            const revisedTerms = document.getElementById('d_add_revisedTerms').value.trim();
+            contract.revisions = (contract.revisions || 0) + 1;
+            if (revisedRate) contract.rate = parseFloat(revisedRate);
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Addendum → Reason: ${reason} | Revised Rate: ${revisedRate || 'N/A'} | Revised Terms: ${revisedTerms || 'N/A'}`;
+        } else if (actionType === 'extension') {
+            reason = document.getElementById('d_ext_reason').value.trim();
+            if (!reason) { alert('Please enter reason for extension!'); return; }
+            const newExpiry = document.getElementById('d_ext_newExpiry').value;
+            if (!newExpiry) { alert('Please select new expiry date!'); return; }
+            const revisedRate = document.getElementById('d_ext_revisedRate').value;
+            const revisedTerms = document.getElementById('d_ext_revisedTerms').value.trim();
+            contract.endDate = newExpiry;
+            contract.extended = true;
+            contract.status = 'Extended';
+            contract.revisions = (contract.revisions || 0) + 1;
+            if (revisedRate) contract.rate = parseFloat(revisedRate);
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Extension → Reason: ${reason} | New Expiry: ${newExpiry} | Revised Rate: ${revisedRate || 'N/A'} | Revised Terms: ${revisedTerms || 'N/A'}`;
+        } else if (actionType === 'termination') {
+            reason = document.getElementById('d_term_reason').value.trim();
+            if (!reason) { alert('Please enter reason for termination!'); return; }
+            contract.status = 'Terminated';
+            contract.revisions = (contract.revisions || 0) + 1;
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Termination → Reason: ${reason}`;
+        } else if (actionType === 'suspension') {
+            reason = document.getElementById('d_sus_reason').value.trim();
+            if (!reason) { alert('Please enter reason for suspension!'); return; }
+            contract.status = 'Suspended';
+            contract.suspensionReason = reason;
+            contract.revisions = (contract.revisions || 0) + 1;
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Suspension → Reason: ${reason}`;
+        } else if (actionType === 'others') {
+            const actionLabel = document.getElementById('d_others_action').value.trim();
+            const details = document.getElementById('d_others_details').value.trim();
+            if (!actionLabel) { alert('Please specify the action!'); return; }
+            if (!details) { alert('Please provide details!'); return; }
+            contract.revisions = (contract.revisions || 0) + 1;
+            const saved = await db.put('contracts', contract);
+            if (saved) {
+                const index = contracts.findIndex(c => c.id === contractId);
+                if (index !== -1) contracts[index] = saved;
+            }
+            detail = `Others (${actionLabel}) → ${details}`;
+        }
+
+        await db.addContractHistory(contractId, contract.vendorCode, contract.vendorName, actionType.charAt(0).toUpperCase() + actionType.slice(1), detail, new Date().toISOString().split('T')[0], null, { status: contract.status, endDate: contract.endDate });
+
+        closeDetailModal();
+        await loadContracts();
+        await db.triggerSync();
+        alert(`✅ ${actionType.charAt(0).toUpperCase() + actionType.slice(1)} applied successfully!`);
+    } catch(e) {
+        console.error('Action error:', e);
+        alert('❌ Error: ' + e.message);
     }
-
-    await db.addContractHistory(contractId, contract.vendorCode, contract.vendorName, actionType.charAt(0).toUpperCase() + actionType.slice(1), detail, new Date().toISOString().split('T')[0], null, { status: contract.status, endDate: contract.endDate });
-
-    closeDetailModal();
-    await loadContracts();
-    await db.triggerSync();
-    alert(`✅ ${actionType.charAt(0).toUpperCase() + actionType.slice(1)} applied successfully!`);
 }
 
 function closeAddModal() { document.getElementById('addModal').classList.remove('active'); }
@@ -923,7 +1013,7 @@ async function importContracts(event) {
 }
 async function selectFolder() { const handle = await db.selectFolder(); if (handle) document.getElementById('folderLabel').textContent = handle.name; }
 async function manualSave() { await db.triggerSync(); alert('✅ Data saved!'); }
-async function refreshData() { await db.loadFromLocalStorage(); await loadContracts(); alert('✅ Data refreshed!'); }
+async function refreshData() { await loadContracts(); alert('✅ Data refreshed!'); }
 window.refreshData = refreshData;
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -933,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     expiryDays = 60;
     await db.loadFromLocalStorage();
     await loadContracts();
-    setInterval(async () => { await db.loadFromLocalStorage(); await loadContracts(); }, 60000);
+    setInterval(async () => { await loadContracts(); }, 60000);
     document.getElementById('addModal').addEventListener('click', function(e) { if (e.target === this) closeAddModal(); });
     document.getElementById('detailModal').addEventListener('click', function(e) { if (e.target === this) closeDetailModal(); });
 });

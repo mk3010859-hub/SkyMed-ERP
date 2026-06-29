@@ -6,7 +6,6 @@
     <title>SkyMed Pro - Payables</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="js/security.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
         body{background:#eef2f7;display:flex;min-height:100vh}
@@ -37,7 +36,7 @@
         .nav-sub a:hover{background:rgba(255,255,255,.05);color:#fff}
         .nav-sub a.active{background:rgba(255,255,255,.08);color:#fff;border-left-color:#7bc5f5}
         .nav-sub a i{width:20px;text-align:center;font-size:.7rem}
-        
+
         .main{flex:1;padding:20px 24px;overflow-y:auto;max-height:100vh}
         .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
         .header h1{font-size:1.4rem;color:#1a3a5a}
@@ -55,8 +54,8 @@
         .btn-outline:hover{background:#f5f8fc}
         .btn-sm{padding:3px 10px;font-size:.7rem}
         .btn-logout{background:#c44545;color:#fff;border:none;padding:6px 16px;border-radius:30px;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;gap:5px;transition:.2s;font-weight:600}
-        .btn-logout:hover{background:#a13232;transform:scale(1.02)}
-        
+        .btn-logout:hover{background:#a13232}
+
         .filter-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:#f7faff;border-radius:12px;border:1px solid #e8edf5;margin-bottom:16px}
         .filter-bar label{font-size:.75rem;font-weight:600;color:#3a5a7a}
         .filter-bar select,.filter-bar input{padding:5px 14px;border-radius:30px;border:1px solid #dce4ed;background:#fff;font-size:.75rem}
@@ -98,6 +97,9 @@
         .summary-footer .total{font-weight:700}
         .summary-footer .total .amount{color:#1a5cff}
         
+        .btn-logout{background:#c44545;color:#fff;border:none;padding:6px 16px;border-radius:30px;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;gap:5px;transition:.2s;font-weight:600}
+        .btn-logout:hover{background:#a13232}
+
         @media(max-width:768px){.sidebar{width:60px}.sidebar .logo span,.sidebar .logo small,.sidebar .nav a span,.sidebar .user .name,.sidebar .user .role,.sidebar .folder-info span{display:none}.sidebar .nav a{padding:10px 18px;justify-content:center}.sidebar .folder-info .sub{display:none}.main{padding:12px}.form-grid{grid-template-columns:1fr 1fr}.filter-bar{flex-direction:column;align-items:stretch}}
         @media(max-width:480px){.form-grid{grid-template-columns:1fr}}
     </style>
@@ -106,18 +108,40 @@
 
 <script>
     (function() {
-        if (sessionStorage.getItem('skymed_logged_in') !== 'true') {
+        if (!localStorage.getItem('jwt_token')) {
             window.location.href = 'login.html';
         }
     })();
 
+    function toggleSubMenu(id) {
+        const sub = document.getElementById(id);
+        const arrow = document.getElementById(id + 'Arrow');
+        if (!sub) return;
+        sub.classList.toggle('open');
+        if (arrow) {
+            arrow.style.transform = sub.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+    }
+
     function logoutUser() {
         if (confirm('⚠️ Are you sure you want to logout?')) {
-            sessionStorage.removeItem('skymed_logged_in');
-            sessionStorage.removeItem('skymed_login_time');
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user');
             window.location.href = 'login.html';
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const financeSub = document.getElementById('financeSub');
+        if (financeSub) {
+            const hasActive = financeSub.querySelector('a.active');
+            if (hasActive) {
+                financeSub.classList.add('open');
+                const arrow = document.getElementById('financeArrow');
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            }
+        }
+    });
 </script>
 
 <div class="sidebar">
@@ -127,7 +151,7 @@
     </div>
 <div class="nav">
     <a href="index.html"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
-    <a href="master.html" class="active"><i class="fas fa-building"></i> <span>Master Vendor</span></a>
+    <a href="master.html"><i class="fas fa-building"></i> <span>Master Vendor</span></a>
     <a href="contracts.html"><i class="fas fa-file-contract"></i> <span>Contracts</span></a>
     <a href="general.html"><i class="fas fa-clipboard-list"></i> <span>General Entry</span></a>
     
@@ -146,10 +170,11 @@
     
     <a href="provision.html"><i class="fas fa-calculator"></i> <span>Provision</span></a>
     <a href="payroll.html"><i class="fas fa-users"></i> <span>Payroll</span></a>
-   <a href="assets.html"><i class="fas fa-laptop"></i> <span>Assets</span></a>
-        <a href="imprest.html"><i class="fas fa-wallet"></i> <span>Imprest</span></a>
+    <a href="assets.html"><i class="fas fa-laptop"></i> <span>Assets</span></a>
+    <a href="imprest.html"><i class="fas fa-wallet"></i> <span>Imprest</span></a>
     <a href="deleted.html"><i class="fas fa-trash"></i> <span>Deleted</span></a>
     <a href="settings.html"><i class="fas fa-cog"></i> <span>Settings</span></a>
+    <a href="admin-requests.html"><i class="fas fa-user-check"></i> <span>Pending Requests</span></a>
 </div>
     <div class="folder-info" onclick="selectFolder()">
         <i class="fas fa-folder"></i> <span id="folderLabel">Select Folder</span>
@@ -170,8 +195,8 @@
             <button class="btn btn-primary" onclick="exportPayables()"><i class="fas fa-file-excel"></i> Export</button>
             <button class="btn btn-outline" onclick="document.getElementById('csvUpload').click()"><i class="fas fa-upload"></i> Import</button>
             <button class="btn btn-outline" onclick="manualSave()"><i class="fas fa-save"></i> Save</button>
-            <!-- ❌ LOGOUT BUTTON HATAYA -->
             <input type="file" id="csvUpload" accept=".csv,.xlsx" style="display:none" onchange="importPayables(event)">
+            <button class="btn btn-logout" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
 
@@ -250,35 +275,38 @@
 <script src="js/db.js"></script>
 <script>
 // ============================================================
-// SIDEBAR SUB-MENU TOGGLE
+// LOGOUT
 // ============================================================
-function toggleSubMenu(id) {
-    const sub = document.getElementById(id);
-    const arrow = document.getElementById(id + 'Arrow');
-    if (!sub) return;
-    sub.classList.toggle('open');
-    if (arrow) {
-        arrow.style.transform = sub.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+function logoutUser() {
+    if (confirm('⚠️ Are you sure you want to logout?')) {
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
     }
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const financeSub = document.getElementById('financeSub');
-    if (financeSub) {
-        const hasActive = financeSub.querySelector('a.active');
-        if (hasActive) {
-            financeSub.classList.add('open');
-            const arrow = document.getElementById('financeArrow');
-            if (arrow) arrow.style.transform = 'rotate(180deg)';
-        }
-    }
-});
 
 // ============================================================
 // DATA
 // ============================================================
 let vendors = [], locations = [], payables = [], editId = null;
 let dataLoaded = false;
+
+function formatCurrency(num) {
+    if (num === undefined || num === null || isNaN(num)) return '₹0';
+    const n = parseFloat(num);
+    if (n < 0) return '-₹' + formatCurrency(Math.abs(n));
+    const parts = n.toFixed(2).split('.');
+    const intPart = parts[0];
+    const decPart = parts[1] || '00';
+    const lastThree = intPart.slice(-3);
+    const otherNumbers = intPart.slice(0, -3);
+    const formatted = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + (otherNumbers ? ',' : '') + lastThree;
+    return '₹' + formatted + '.' + decPart;
+}
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+}
 
 function getMonthYear(dateStr) {
     if (!dateStr) return '';
@@ -574,20 +602,35 @@ async function savePayable() {
         entryId: null
     };
 
-    if (editId) {
-        const existing = payables.find(r => r.id === editId);
-        if (existing) Object.assign(existing, data);
-        await db.put('payables', data);
-    } else {
-        await db.put('payables', data);
+    try {
+        if (editId) {
+            const existing = payables.find(r => r.id === editId);
+            if (existing) {
+                const updated = { ...existing, ...data };
+                const saved = await db.put('payables', updated);
+                if (saved) {
+                    const index = payables.findIndex(r => r.id === editId);
+                    if (index !== -1) payables[index] = saved;
+                    await db.addToMaster(saved, 'Payable');
+                    alert('✅ Payable updated!');
+                }
+            }
+        } else {
+            const saved = await db.add('payables', data);
+            if (saved) {
+                payables.push(saved);
+                await db.addToMaster(saved, 'Payable');
+                alert('✅ Payable saved!');
+            }
+        }
+    } catch(e) {
+        console.error('Save error:', e);
+        alert('❌ Error: ' + e.message);
     }
-    
-    await db.addToMaster(data, 'Payable');
 
     closeModal();
     await loadPayables();
     await db.triggerSync();
-    alert('✅ Payable saved!');
 }
 
 async function editPayable(id) {
@@ -633,16 +676,26 @@ async function editPayable(id) {
 
 async function deletePayable(id) {
     if (!confirm('Delete this payable?')) return;
-    await db.softDelete('payables', id);
     const pay = payables.find(r => r.id === id);
     if (pay) {
-        const masters = await db.getAll('master') || [];
-        const toDelete = masters.filter(m => m.vendorCode === pay.vendorCode && m.invoice === pay.invoice);
-        for (const m of toDelete) { await db.softDelete('master', m.id); }
+        try {
+            await db.softDelete('payables', id);
+            const index = payables.findIndex(r => r.id === id);
+            if (index !== -1) payables.splice(index, 1);
+            
+            const masters = await db.getAll('master') || [];
+            const toDelete = masters.filter(m => m.vendorCode === pay.vendorCode && m.invoice === pay.invoice);
+            for (const m of toDelete) {
+                await db.softDelete('master', m.id);
+            }
+            alert('✅ Payable moved to deleted records!');
+        } catch(e) {
+            console.error('Delete error:', e);
+            alert('❌ Error: ' + e.message);
+        }
     }
     await loadPayables();
     await db.triggerSync();
-    alert('✅ Payable moved to deleted records!');
 }
 
 function downloadFilteredData() {
@@ -854,9 +907,12 @@ async function importPayables(event) {
                             importedAt: new Date().toISOString()
                         };
 
-                        await db.put('payables', record);
-                        await db.addToMaster(record, 'Payable');
-                        imported++;
+                        const saved = await db.add('payables', record);
+                        if (saved) {
+                            payables.push(saved);
+                            await db.addToMaster(saved, 'Payable');
+                            imported++;
+                        }
                     } catch(rowError) {
                         errors.push(`Row ${i+2}: ${rowError.message}`);
                     }
@@ -890,7 +946,6 @@ async function manualSave() {
 }
 
 async function refreshData() {
-    await db.loadFromLocalStorage();
     await loadPayables();
     alert('✅ Data refreshed!');
 }
@@ -902,7 +957,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     await db.loadFromLocalStorage();
     await loadPayables();
     setInterval(async () => {
-        await db.loadFromLocalStorage();
         await loadPayables();
     }, 60000);
     document.getElementById('modalOverlay').addEventListener('click', function(e) {
@@ -910,7 +964,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 });
 
-// Footer
 document.addEventListener('DOMContentLoaded', function() {
     const footer = document.createElement('div');
     footer.style.cssText = 'text-align:center;padding:10px 20px;font-size:.7rem;color:#7a8fa5;border-top:1px solid #eef3f9;margin-top:16px;';

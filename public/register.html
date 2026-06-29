@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyMed Pro - Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/security.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+        body{min-height:100vh;display:flex;justify-content:center;align-items:center;background:linear-gradient(135deg,#0b2a4a 0%,#1a4f7a 50%,#2a6b9e 100%)}
+        .register-container{background:rgba(255,255,255,.95);border-radius:20px;padding:40px 45px;width:450px;max-width:95%;box-shadow:0 20px 60px rgba(0,0,0,.4);animation:fadeIn .5s ease}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+        .logo{text-align:center;margin-bottom:25px}
+        .logo i{font-size:40px;color:#1a5cff;background:#e8f0fe;padding:15px;border-radius:50%}
+        .logo h1{font-size:24px;color:#1a2639;margin-top:10px}
+        .logo h1 span{color:#1a5cff}
+        .logo small{color:#7a8fa5;font-size:13px}
+        .form-group{margin-bottom:15px}
+        .form-group label{display:block;font-size:13px;font-weight:600;color:#3a5a7a;margin-bottom:5px}
+        .form-group input{width:100%;padding:12px 14px;border:2px solid #dce4ed;border-radius:10px;font-size:14px;background:#f8faff;transition:.3s;outline:none}
+        .form-group input:focus{border-color:#1a5cff;box-shadow:0 0 0 4px rgba(26,92,255,.1)}
+        .btn{width:100%;padding:14px;background:linear-gradient(135deg,#1a5cff,#0f4ad0);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:.3s}
+        .btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(26,92,255,.3)}
+        .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+        .error{color:#c44545;font-size:13px;margin-top:10px;display:none}
+        .error.show{display:block}
+        .success{color:#1e8b5c;font-size:13px;margin-top:10px;display:none}
+        .success.show{display:block}
+        .login-link{text-align:center;margin-top:15px;font-size:13px}
+        .login-link a{color:#1a5cff;text-decoration:none;font-weight:600}
+        .password-req{font-size:12px;color:#7a8fa5;margin-top:4px}
+        .password-req .valid{color:#1e8b5c}
+        .password-req .invalid{color:#c44545}
+        .footer-text{text-align:center;margin-top:18px;color:#8a99b0;font-size:12px}
+        .footer-text span{color:#1a5cff;font-weight:600}
+    </style>
+</head>
+<body>
+
+<div class="register-container">
+    <div class="logo">
+        <i class="fas fa-notes-medical"></i>
+        <h1>Sky<span>Med</span></h1>
+        <small>Create your account</small>
+    </div>
+
+    <div class="error" id="errorMsg"><i class="fas fa-exclamation-circle"></i> <span id="errorText"></span></div>
+    <div class="success" id="successMsg"><i class="fas fa-check-circle"></i> <span id="successText"></span></div>
+
+    <form id="registerForm" onsubmit="handleRegister(event)">
+        <div class="form-group">
+            <label><i class="fas fa-user"></i> Full Name</label>
+            <input type="text" id="username" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-envelope"></i> Email Address</label>
+            <input type="email" id="email" placeholder="john@example.com" required>
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <input type="password" id="password" placeholder="Min 8 characters" required minlength="8">
+            <div class="password-req" id="passReq">
+                <span id="lenCheck" class="invalid">❌ At least 8 characters</span><br>
+                <span id="upperCheck" class="invalid">❌ One uppercase letter</span><br>
+                <span id="numCheck" class="invalid">❌ One number</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-check"></i> Confirm Password</label>
+            <input type="password" id="confirmPassword" placeholder="Confirm password" required>
+        </div>
+        <button type="submit" class="btn" id="registerBtn">Create Account</button>
+    </form>
+
+    <div class="login-link">
+        Already have an account? <a href="login.html">Sign in</a>
+    </div>
+
+    <div class="footer-text">
+        <i class="fas fa-shield-alt" style="color:#1a5cff;"></i> Secure · <span>SkyMed Pro</span>
+        <br>
+        <small style="font-size:10px;color:#8a99b0;">
+            <i class="fas fa-code"></i> Developed by 
+            <a href="https://www.linkedin.com/in/ram-kumar-60072454/" target="_blank" style="color:#1a5cff;text-decoration:none;">
+                Ram Kumar
+            </a>
+            &nbsp;|&nbsp; <i class="fas fa-phone"></i> +91-97364-38856
+        </small>
+    </div>
+</div>
+
+<script>
+const passwordInput = document.getElementById('password');
+
+passwordInput.addEventListener('input', function() {
+    const val = this.value;
+    document.getElementById('lenCheck').className = val.length >= 8 ? 'valid' : 'invalid';
+    document.getElementById('lenCheck').textContent = val.length >= 8 ? '✅ At least 8 characters' : '❌ At least 8 characters';
+    document.getElementById('upperCheck').className = /[A-Z]/.test(val) ? 'valid' : 'invalid';
+    document.getElementById('upperCheck').textContent = /[A-Z]/.test(val) ? '✅ One uppercase letter' : '❌ One uppercase letter';
+    document.getElementById('numCheck').className = /\d/.test(val) ? 'valid' : 'invalid';
+    document.getElementById('numCheck').textContent = /\d/.test(val) ? '✅ One number' : '❌ One number';
+});
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    const btn = document.getElementById('registerBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    const errorText = document.getElementById('errorText');
+    const successMsg = document.getElementById('successMsg');
+    const successText = document.getElementById('successText');
+
+    errorMsg.classList.remove('show');
+    successMsg.classList.remove('show');
+
+    if (!username || !email || !password) {
+        errorText.textContent = '⚠️ All fields are required!';
+        errorMsg.classList.add('show');
+        return;
+    }
+
+    if (password !== confirm) {
+        errorText.textContent = '⚠️ Passwords do not match!';
+        errorMsg.classList.add('show');
+        return;
+    }
+    if (password.length < 8) {
+        errorText.textContent = '⚠️ Password must be at least 8 characters!';
+        errorMsg.classList.add('show');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, username })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Registration failed');
+        
+        successText.textContent = '✅ Registration submitted! Please wait for admin approval.';
+        successMsg.classList.add('show');
+        document.getElementById('registerForm').reset();
+        btn.innerHTML = '✅ Submitted';
+        
+        setTimeout(() => { window.location.href = 'login.html'; }, 3000);
+    } catch (error) {
+        errorText.textContent = error.message;
+        errorMsg.classList.add('show');
+        btn.innerHTML = 'Create Account';
+        btn.disabled = false;
+    }
+}
+</script>
+</body>
+</html>

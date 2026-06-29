@@ -70,17 +70,14 @@ app.get('/:page.html', (req, res) => {
 // START SERVER
 // ============================================================
 async function startServer() {
-    // Test TiDB connection
     const connected = await testConnection();
     if (!connected) {
         console.error('❌ Database connection failed. Exiting...');
         process.exit(1);
     }
 
-    // Init tables
     await initTables();
 
-    // Create admin user
     try {
         const bcrypt = require('bcryptjs');
         const [admins] = await pool.query(
@@ -106,21 +103,17 @@ async function startServer() {
         console.warn('⚠️ Admin creation skipped:', error.message);
     }
 
-    // Start
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`\n🚀 SkyMed Server Started`);
         console.log(`📡 Port: ${PORT}`);
         console.log(`🌐 URL: https://skymed-erp-production.up.railway.app`);
-        console.log(`💾 Database: TiDB (sys)`);
+        console.log(`💾 Database: TiDB (skymed_db)`);
         console.log(`🔒 Login: mk3010859@gmail.com / SkyMed@2026\n`);
     });
 }
 
 startServer();
 
-// ============================================================
-// ERROR HANDLING
-// ============================================================
 process.on('unhandledRejection', (error) => {
     console.error('❌ Unhandled Rejection:', error);
 });

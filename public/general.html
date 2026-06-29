@@ -120,7 +120,7 @@
 
 <script>
     (function() {
-        if (sessionStorage.getItem('skymed_logged_in') !== 'true') {
+        if (!localStorage.getItem('jwt_token')) {
             window.location.href = 'login.html';
         }
     })();

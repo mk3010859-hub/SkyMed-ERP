@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { connectToTiDB } = require('../db/tidb');
+
+// ✅ SAHI PATH - database.js use karo (jo server.js mein already hai)
+const { pool } = require('../config/database');
 
 // ============================================================
 // GET - Fetch all users with permissions
 // ============================================================
 router.get('/get-requests', async (req, res) => {
     try {
-        const connection = await connectToTiDB();
-        
-        const [users] = await connection.execute(`
+        const [users] = await pool.query(`
             SELECT 
                 id,
                 email,
@@ -58,13 +58,12 @@ router.post('/save-requests', async (req, res) => {
             });
         }
         
-        const connection = await connectToTiDB();
         let updatedCount = 0;
         
         for (const user of requests) {
             const permissionsJson = JSON.stringify(user.permissions || {});
             
-            const [result] = await connection.execute(
+            const [result] = await pool.query(
                 `UPDATE users 
                  SET status = ?, 
                      permissions = ?,

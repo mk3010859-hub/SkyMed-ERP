@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyMed Pro - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 🔒 Security -->
+    <script src="js/security.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0b2a4a 0%, #1a4f7a 50%, #2a6b9e 100%);
+            background-attachment: fixed;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px 45px;
+            width: 420px;
+            max-width: 95%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-logo i {
+            font-size: 48px;
+            color: #1a5cff;
+            background: #e8f0fe;
+            padding: 18px;
+            border-radius: 50%;
+        }
+
+        .login-logo h1 {
+            font-size: 28px;
+            color: #1a2639;
+            margin-top: 12px;
+            font-weight: 700;
+        }
+
+        .login-logo h1 span {
+            color: #1a5cff;
+        }
+
+        .login-logo small {
+            display: block;
+            color: #7a8fa5;
+            font-size: 13px;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #3a5a7a;
+            margin-bottom: 6px;
+        }
+
+        .form-group .input-wrapper {
+            position: relative;
+        }
+
+        .form-group .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a99b0;
+            font-size: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px 12px 44px;
+            border: 2px solid #dce4ed;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #f8faff;
+            transition: 0.3s;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #1a5cff;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(26, 92, 255, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #b0c0d0;
+        }
+
+        .form-group .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #8a99b0;
+            font-size: 16px;
+            background: none;
+            border: none;
+        }
+
+        .form-group .toggle-password:hover {
+            color: #1a5cff;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1a5cff, #0f4ad0);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(26, 92, 255, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-btn i {
+            font-size: 18px;
+        }
+
+        .error-message {
+            background: #fce8e8;
+            color: #c44545;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+            border-left: 4px solid #c44545;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 18px;
+            color: #8a99b0;
+            font-size: 12px;
+        }
+
+        .footer-text span {
+            color: #1a5cff;
+            font-weight: 600;
+        }
+
+        /* Attempts counter */
+        .attempts-info {
+            text-align: center;
+            font-size: 12px;
+            color: #7a8fa5;
+            margin-top: 8px;
+        }
+
+        /* Register link */
+        .register-link {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .register-link a {
+            color: #1a5cff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* 2FA Section */
+        #twofaSection {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 24px;
+            }
+            .login-logo i {
+                font-size: 36px;
+                padding: 14px;
+            }
+            .login-logo h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container" id="loginContainer">
+    <!-- Logo -->
+    <div class="login-logo">
+        <i class="fas fa-notes-medical"></i>
+        <h1>Sky<span>Med</span></h1>
+        <small>v7.0 · Secure Portal</small>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" id="errorMessage">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="errorText">Invalid credentials. Please try again.</span>
+    </div>
+
+    <!-- Login Form -->
+    <form id="loginForm" autocomplete="off">
+        <div class="form-group">
+            <label><i class="fas fa-envelope" style="margin-right:6px;color:#1a5cff;"></i> Email</label>
+            <div class="input-wrapper">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" placeholder="admin@skymed.com" value="mk3010859@gmail.com" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-lock" style="margin-right:6px;color:#1a5cff;"></i> Password</label>
+            <div class="input-wrapper">
+                <i class="fas fa-key"></i>
+                <input type="password" id="password" placeholder="Enter password" value="SkyMed@2026" required>
+                <button type="button" class="toggle-password" onclick="togglePassword()">
+                    <i class="fas fa-eye" id="toggleIcon"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2FA Section (hidden initially) -->
+        <div id="twofaSection" style="display:none;">
+            <div class="form-group">
+                <label><i class="fas fa-shield-alt" style="margin-right:6px;color:#1a5cff;"></i> 2FA Code</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-shield-alt"></i>
+                    <input type="text" id="twofaCode" placeholder="6-digit code" maxlength="6" inputmode="numeric">
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="login-btn" id="loginBtn">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+
+        <div class="attempts-info" id="attemptsInfo">🔒 Secure Login</div>
+
+        <div class="register-link">
+            Don't have an account? <a href="register.html">Register here</a>
+        </div>
+    </form>
+
+    <div class="footer-text">
+        <i class="fas fa-shield-alt" style="color:#1a5cff;"></i> Secure · <span>SkyMed Pro</span>
+        <br>
+        <small style="font-size:10px;color:#8a99b0;">
+            <i class="fas fa-code"></i> Developed by 
+            <a href="https://www.linkedin.com/in/ram-kumar-60072454/" target="_blank" style="color:#1a5cff;text-decoration:none;">
+                Ram Kumar
+            </a>
+            &nbsp;|&nbsp; <i class="fas fa-phone"></i> +91-97364-38856
+        </small>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // 🔒 LOGIN SYSTEM - TiDB Backend
+    // ============================================================
+
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+    let locked = false;
+    let userId = null;
+
+    // DOM Elements
+    const loginForm = document.getElementById('loginForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const twofaInput = document.getElementById('twofaCode');
+    const twofaSection = document.getElementById('twofaSection');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    const attemptsInfo = document.getElementById('attemptsInfo');
+    const loginBtn = document.getElementById('loginBtn');
+    const container = document.getElementById('loginContainer');
+
+    // Update attempts display
+    function updateAttempts() {
+        const remaining = MAX_ATTEMPTS - attempts;
+        attemptsInfo.textContent = `Attempts remaining: ${remaining}`;
+        if (remaining <= 2) {
+            attemptsInfo.style.color = '#c44545';
+        } else {
+            attemptsInfo.style.color = '#7a8fa5';
+        }
+    }
+
+    // Show error
+    function showError(message) {
+        errorText.textContent = message;
+        errorMessage.classList.add('show');
+        setTimeout(() => {
+            errorMessage.classList.remove('show');
+        }, 4000);
+    }
+
+    // Toggle password visibility
+    function togglePassword() {
+        const icon = document.getElementById('toggleIcon');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            passwordInput.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    }
+
+    // Lock the screen
+    function lockScreen() {
+        locked = true;
+        container.classList.add('locked');
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<i class="fas fa-lock"></i> Locked';
+        attemptsInfo.textContent = '🔒 Too many failed attempts. Please try again later.';
+        attemptsInfo.style.color = '#c44545';
+        showError('🔒 Account locked due to too many failed attempts.');
+    }
+
+    // ============================================================
+    // LOGIN FUNCTION - TiDB Backend
+    // ============================================================
+    async function handleLogin(e) {
+        e.preventDefault();
+
+        if (locked) {
+            showError('🔒 Account is locked. Please try again later.');
+            return;
+        }
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        const twofaCode = twofaInput.value.trim();
+
+        if (!email || !password) {
+            showError('⚠️ Please enter both email and password.');
+            return;
+        }
+
+        // Show loading state
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+        errorMessage.classList.remove('show');
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, twofaCode: twofaCode || null })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Login failed');
+            }
+
+            // Check if 2FA is required
+            if (data.requires2FA) {
+                userId = data.userId;
+                twofaSection.style.display = 'block';
+                twofaInput.focus();
+                loginBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Verify 2FA';
+                loginBtn.disabled = false;
+                showError(''); // Clear error
+                return;
+            }
+
+            // ✅ Login successful
+            attempts = 0;
+            updateAttempts();
+
+            // Save session
+            localStorage.setItem('jwt_token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            // Show success
+            loginBtn.innerHTML = '<i class="fas fa-check-circle"></i> Success! Redirecting...';
+
+            setTimeout(() => {
+                // Redirect to dashboard
+                window.location.href = 'dashboard.html';
+            }, 800);
+
+        } catch (error) {
+            // ❌ Login failed
+            attempts++;
+            updateAttempts();
+
+            if (attempts >= MAX_ATTEMPTS) {
+                lockScreen();
+                return;
+            }
+
+            const remaining = MAX_ATTEMPTS - attempts;
+            showError(`❌ ${error.message}. ${remaining} attempts remaining.`);
+
+            // Clear password
+            passwordInput.value = '';
+            passwordInput.focus();
+
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+            loginBtn.disabled = false;
+
+            // Hide 2FA section if shown
+            twofaSection.style.display = 'none';
+            twofaInput.value = '';
+        }
+    }
+
+    // Enter key support
+    passwordInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            loginForm.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    twofaInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            loginForm.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    emailInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            passwordInput.focus();
+        }
+    });
+
+    // Check if already logged in
+    function checkSession() {
+        const token = localStorage.getItem('jwt_token');
+        if (token) {
+            // Optional: Verify token with backend
+            fetch('/api/auth/profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => {
+                if (res.ok) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    localStorage.removeItem('jwt_token');
+                    localStorage.removeItem('user');
+                }
+            })
+            .catch(() => {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user');
+            });
+        }
+    }
+
+    // Event listener
+    loginForm.addEventListener('submit', handleLogin);
+
+    // Initialize
+    updateAttempts();
+    checkSession();
+
+    // Focus on email field
+    setTimeout(() => {
+        emailInput.focus();
+    }, 300);
+
+    console.log('🔒 Login page loaded. Email: mk3010859@gmail.com');
+</script>
+</body>
+</html>

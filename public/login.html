@@ -424,7 +424,6 @@
                 twofaInput.focus();
                 loginBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Verify 2FA';
                 loginBtn.disabled = false;
-                showError(''); // Clear error
                 return;
             }
 
@@ -432,7 +431,7 @@
             attempts = 0;
             updateAttempts();
 
-            // Save session
+            // Save session - localStorage mein JWT token save karo
             localStorage.setItem('jwt_token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -493,7 +492,7 @@
     function checkSession() {
         const token = localStorage.getItem('jwt_token');
         if (token) {
-            // Optional: Verify token with backend
+            // Verify token with backend
             fetch('/api/auth/profile', {
                 headers: { 'Authorization': `Bearer ${token}` }
             })

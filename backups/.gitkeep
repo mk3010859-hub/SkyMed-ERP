@@ -1,0 +1,3 @@
+# This folder keeps automated SQL backups
+# Backups are created daily at 2 AM
+# Max 5 backup files are kept

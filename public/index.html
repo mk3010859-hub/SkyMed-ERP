@@ -108,9 +108,14 @@
 </head>
 <body>
 
+<!-- ============================================================ -->
+<!-- 🔒 SESSION CHECK - FIXED: LocalStorage se check karo           -->
+<!-- ============================================================ -->
 <script>
     (function() {
-        if (sessionStorage.getItem('skymed_logged_in') !== 'true') {
+        // ✅ LocalStorage se token check karo
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
             window.location.href = 'login.html';
         }
     })();

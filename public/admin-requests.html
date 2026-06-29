@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyMed Pro - Admin Requests</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/security.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+        body{background:#eef2f7;display:flex;min-height:100vh}
+        .sidebar{width:220px;background:#0b2a4a;color:#fff;padding:20px 0;flex-shrink:0;display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
+        .sidebar .logo{padding:0 20px 20px;font-size:1.2rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1)}
+        .sidebar .logo i{color:#7bc5f5}
+        .sidebar .logo small{font-size:.6rem;opacity:.6;font-weight:400;display:block}
+        .sidebar .nav{padding:15px 0;flex:1}
+        .sidebar .nav a{display:flex;align-items:center;gap:12px;padding:10px 20px;color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;transition:.2s;border-left:3px solid transparent}
+        .sidebar .nav a:hover{background:rgba(255,255,255,.05);color:#fff}
+        .sidebar .nav a.active{background:rgba(255,255,255,.08);color:#fff;border-left-color:#7bc5f5}
+        .sidebar .nav a i{width:20px;text-align:center}
+        .sidebar .user{padding:15px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:.8rem;display:flex;align-items:center;gap:10px}
+        .sidebar .user .name{font-weight:600}
+        .sidebar .user .role{font-size:.65rem;opacity:.6}
+        .sidebar .folder-info{padding:8px 20px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;font-size:.7rem;opacity:.8}
+        .sidebar .folder-info:hover{opacity:1;background:rgba(255,255,255,.05)}
+        .sidebar .folder-info i{margin-right:6px}
+        .sidebar .folder-info .sub{font-size:.6rem;opacity:.5;display:block;margin-top:2px}
+
+        .main{flex:1;padding:20px 24px;overflow-y:auto;max-height:100vh}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+        .header h1{font-size:1.4rem;color:#1a3a5a}
+        .header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .btn{padding:6px 16px;border:none;border-radius:30px;cursor:pointer;font-size:.8rem;transition:.2s;display:inline-flex;align-items:center;gap:5px;text-decoration:none;font-weight:600}
+        .btn-primary{background:#2a6b9e;color:#fff}
+        .btn-primary:hover{background:#1e4f77}
+        .btn-success{background:#1e8b5c;color:#fff}
+        .btn-success:hover{background:#156a45}
+        .btn-danger{background:#c44545;color:#fff}
+        .btn-danger:hover{background:#a13232}
+        .btn-outline{background:transparent;border:1px solid #dce4ed;color:#3a5a7a}
+        .btn-outline:hover{background:#f5f8fc}
+
+        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+        .stat-card{background:#fff;padding:16px 20px;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+        .stat-card .number{font-size:24px;font-weight:700;color:#1a3a5a}
+        .stat-card .label{font-size:.75rem;color:#7a8fa5;font-weight:600;text-transform:uppercase}
+        .stat-card.pending .number{color:#d48a2e}
+        .stat-card.active .number{color:#1e8b5c}
+        .stat-card.total .number{color:#1a5cff}
+        .stat-card.rejected .number{color:#c44545}
+
+        .table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e8edf5;background:#fff;height:calc(100vh - 320px);overflow-y:auto}
+        table{width:100%;border-collapse:collapse;font-size:.8rem}
+        th{background:#f5f8fc;padding:10px 14px;text-align:left;font-weight:700;color:#3a5a7a;position:sticky;top:0;z-index:2;border-bottom:2px solid #e0e7ef}
+        td{padding:8px 14px;border-bottom:1px solid #eef3f9}
+        tr:hover td{background:#f7faff}
+        .badge{display:inline-block;padding:2px 10px;border-radius:30px;font-size:.65rem;font-weight:700}
+        .badge-pending{background:#fdf0e0;color:#a87020}
+        .badge-approved{background:#dff0e8;color:#1a6a4a}
+        .badge-rejected{background:#fce8e8;color:#a84040}
+        .btn-sm{padding:3px 12px;font-size:.7rem}
+        .empty-state{text-align:center;padding:40px;color:#7a8fa5}
+        .empty-state i{font-size:2rem;opacity:.3;display:block;margin-bottom:10px}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:center}
+        .modal-overlay.active{display:flex}
+        .modal-box{background:#fff;border-radius:16px;padding:24px;max-width:500px;width:95%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+        .modal-box h3{margin-bottom:16px;color:#1a3a5a}
+        .modal-box textarea{width:100%;padding:10px;border:1px solid #dce4ed;border-radius:8px;font-size:.8rem;min-height:80px;font-family:inherit}
+        .modal-box textarea:focus{outline:0;border-color:#2a6b9e}
+        .modal-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+        .toast{position:fixed;bottom:20px;right:20px;padding:12px 24px;border-radius:10px;color:#fff;font-weight:500;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+        .toast.success{background:#1e8b5c}
+        .toast.error{background:#c44545}
+    </style>
+</head>
+<body>
+
+<script>
+    (function() {
+        if (sessionStorage.getItem('skymed_logged_in') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    })();
+</script>
+
+<div class="sidebar">
+    <div class="logo">
+        <i class="fas fa-notes-medical"></i> <span>SkyMed</span>
+        <small>v7.0</small>
+    </div>
+    <div class="nav">
+        <a href="dashboard.html"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
+        <a href="master.html"><i class="fas fa-building"></i> <span>Master Vendor</span></a>
+        <a href="contracts.html"><i class="fas fa-file-contract"></i> <span>Contracts</span></a>
+        <a href="general.html"><i class="fas fa-clipboard-list"></i> <span>General Entry</span></a>
+        <a href="admin-requests.html" class="active"><i class="fas fa-user-check"></i> <span>Pending Requests</span></a>
+        <a href="settings.html"><i class="fas fa-cog"></i> <span>Settings</span></a>
+    </div>
+    <div class="user">
+        <i class="fas fa-user-circle" style="font-size:1.4rem;opacity:.7;"></i>
+        <div><span class="name">Admin</span><br><span class="role">Administrator</span></div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="header">
+        <h1><i class="fas fa-user-check" style="color:#1a5cff;"></i> Pending Registration Requests</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="loadRequests()"><i class="fas fa-sync"></i> Refresh</button>
+        </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card pending">
+            <div class="number" id="statPending">0</div>
+            <div class="label">⏳ Pending</div>
+        </div>
+        <div class="stat-card active">
+            <div class="number" id="statActive">0</div>
+            <div class="label">✅ Active</div>
+        </div>
+        <div class="stat-card total">
+            <div class="number" id="statTotal">0</div>
+            <div class="label">👥 Total Users</div>
+        </div>
+        <div class="stat-card rejected">
+            <div class="number" id="statRejected">0</div>
+            <div class="label">❌ Rejected</div>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Requested On</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="requestsBody">
+                <tr><td colspan="5" class="empty-state"><i class="fas fa-inbox"></i>Loading requests...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal-overlay" id="actionModal">
+    <div class="modal-box">
+        <h3 id="modalTitle">Review Request</h3>
+        <p id="modalUserInfo" style="margin-bottom:12px;color:#3a5a7a;"></p>
+        <textarea id="modalNotes" placeholder="Add notes (optional)"></textarea>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-danger" id="modalRejectBtn" onclick="submitReject()">❌ Reject</button>
+            <button class="btn btn-success" id="modalApproveBtn" onclick="submitApprove()">✅ Approve</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let currentUserId = null;
+
+// ============================================================
+// LOAD REQUESTS
+// ============================================================
+async function loadRequests() {
+    const tbody = document.getElementById('requestsBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+
+    try {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Load stats
+        const statsRes = await fetch('/api/admin/stats', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const stats = await statsRes.json();
+        document.getElementById('statPending').textContent = stats.pending || 0;
+        document.getElementById('statActive').textContent = stats.active || 0;
+        document.getElementById('statTotal').textContent = stats.total || 0;
+        document.getElementById('statRejected').textContent = stats.rejected || 0;
+
+        // Load pending requests
+        const res = await fetch('/api/admin/requests/pending', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            if (res.status === 403) {
+                showToast('❌ Admin access required!', 'error');
+                setTimeout(() => window.location.href = 'dashboard.html', 2000);
+                return;
+            }
+            throw new Error('Failed to load requests');
+        }
+
+        const data = await res.json();
+        const pendingUsers = data.pendingUsers || [];
+
+        if (pendingUsers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-check-circle" style="color:#1e8b5c;"></i>No pending requests</td></tr>';
+            return;
+        }
+
+        let html = '';
+        pendingUsers.forEach(user => {
+            const date = new Date(user.created_at);
+            const formattedDate = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            html += `<tr>
+                <td><strong>${user.email}</strong></td>
+                <td>${user.username || '-'}</td>
+                <td style="font-size:.7rem;">${formattedDate}</td>
+                <td><span class="badge badge-pending">⏳ Pending</span></td>
+                <td>
+                    <button class="btn btn-success btn-sm" onclick="openModal(${user.id}, '${user.email}')">
+                        <i class="fas fa-check"></i> Review
+                    </button>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+
+    } catch (error) {
+        console.error('Load error:', error);
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><i class="fas fa-exclamation-circle" style="color:#c44545;"></i>${error.message}</td></tr>`;
+        showToast('❌ Error loading requests', 'error');
+    }
+}
+
+// ============================================================
+// MODAL FUNCTIONS
+// ============================================================
+function openModal(userId, email) {
+    currentUserId = userId;
+    document.getElementById('modalTitle').textContent = '✏️ Review Registration';
+    document.getElementById('modalUserInfo').textContent = `User: ${email}`;
+    document.getElementById('modalNotes').value = '';
+    document.getElementById('actionModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('actionModal').classList.remove('active');
+    currentUserId = null;
+}
+
+// ============================================================
+// APPROVE USER
+// ============================================================
+async function submitApprove() {
+    if (!currentUserId) return;
+
+    const notes = document.getElementById('modalNotes').value.trim();
+    const btn = document.getElementById('modalApproveBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Processing...';
+
+    try {
+        const token = localStorage.getItem('jwt_token');
+        const res = await fetch(`/api/admin/users/${currentUserId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ notes: notes || 'Approved by admin' })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Approval failed');
+
+        showToast('✅ User approved successfully!', 'success');
+        closeModal();
+        loadRequests();
+
+    } catch (error) {
+        showToast('❌ ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Approve';
+    }
+}
+
+// ============================================================
+// REJECT USER
+// ============================================================
+async function submitReject() {
+    if (!currentUserId) return;
+
+    const reason = document.getElementById('modalNotes').value.trim() || 'Rejected by admin';
+    const btn = document.getElementById('modalRejectBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Processing...';
+
+    try {
+        const token = localStorage.getItem('jwt_token');
+        const res = await fetch(`/api/admin/users/${currentUserId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ reason })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Rejection failed');
+
+        showToast('❌ User rejected', 'error');
+        closeModal();
+        loadRequests();
+
+    } catch (error) {
+        showToast('❌ ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '❌ Reject';
+    }
+}
+
+// ============================================================
+// TOAST NOTIFICATION
+// ============================================================
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    toast.style.display = 'block';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.style.display = 'none';
+    }, 4000);
+}
+
+// ============================================================
+// AUTO-REFRESH
+// ============================================================
+setInterval(loadRequests, 30000);
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', async function() {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+    loadRequests();
+});
+</script>
+</body>
+</html>

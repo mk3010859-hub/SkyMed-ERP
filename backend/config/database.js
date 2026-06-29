@@ -6,7 +6,7 @@ const pool = mysql.createPool({
     port: 4000,
     user: '2YhNuY9x9YR1dry.root',
     password: '1dUtzHOX5FrbzmKe',
-    database: 'skymed_db',  // ✅ YAHAN CHANGE KARO (sys ki jagah)
+    database: 'skymed_db',
     ssl: {
         minVersion: 'TLSv1.2',
         rejectUnauthorized: true
@@ -33,7 +33,6 @@ async function testConnection() {
 
 async function initTables() {
     try {
-        // Check if users table exists
         const [tables] = await pool.query(`
             SELECT COUNT(*) as count 
             FROM information_schema.tables 
@@ -43,7 +42,6 @@ async function initTables() {
 
         if (tables[0].count === 0) {
             console.log('📋 Creating users table...');
-            
             await pool.query(`
                 CREATE TABLE users (
                     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -52,7 +50,7 @@ async function initTables() {
                     password_hash VARCHAR(255) NOT NULL,
                     role VARCHAR(50) DEFAULT 'user',
                     status ENUM('pending', 'active', 'rejected') DEFAULT 'pending',
-                    permissions JSON DEFAULT '{}',
+                    permissions JSON,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     INDEX idx_email (email),
